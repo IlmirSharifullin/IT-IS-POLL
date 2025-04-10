@@ -1,0 +1,36 @@
+{% load static %}
+<header>
+  <nav>
+    <div>
+        {% comment %} Под замену {% endcomment %}
+      <a href="{% url 'pages:about' %}">
+        <img src="{% static 'img/logo.png' %}" width="30" height="30" alt="">
+        Главная (пока переводит на страницу about)
+      </a>
+      {% with request.resolver_match.view_name as view_name %}
+        <ul>
+          <li>
+            <a class="{% if view_name == 'pages:about' %} text-white {% endif %}" href="{% url 'pages:about' %}">
+              О проекте
+            </a>
+          </li>
+          <li>
+            <a class="{% if view_name == 'pages:rules' %} text-white {% endif %}" href="{% url 'pages:rules' %}">
+              Правила
+            </a>
+          </li>
+          {% if user.is_authenticated %}
+            <divrole="group" aria-label="Basic outlined example">
+              <button type="button"><a href="{% url 'logout' %}">Выйти</a></button>
+            </div>
+          {% else %}
+            <div role="group" aria-label="Basic outlined example">
+              <button type="button"><a href="{% url 'login' %}">Войти</a></button>
+              <button type="button"><a href="{% url 'registration' %}">Регистрация</a></button>
+            </div>
+          {% endif %}
+        </ul>
+      {% endwith %}
+    </div>
+  </nav>
+</header>
