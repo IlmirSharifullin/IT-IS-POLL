@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "user.apps.UserConfig",
     "pages.apps.PagesConfig",
     "poll.apps.PollConfig",
+    "news.apps.NewsConfig",
 ]
 
 MIDDLEWARE = [
