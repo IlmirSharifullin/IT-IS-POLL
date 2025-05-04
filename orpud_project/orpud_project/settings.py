@@ -51,6 +51,10 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "user.apps.UserConfig",
+    'rest_framework.authtoken',
+    'rest_framework',
+    'corsheaders',
+    'djoser',
     "pages.apps.PagesConfig",
     "poll.apps.PollConfig",
     "news.apps.NewsConfig",
@@ -59,6 +63,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -142,9 +147,9 @@ USE_TZ = False
 
 AUTH_USER_MODEL = "user.MyUser"
 
-LOGIN_URL = "login"
+# LOGIN_URL = "login"
 
-LOGIN_REDIRECT_URL = "pages:about"  # На замену
+# LOGIN_REDIRECT_URL = "pages:about"  # На замену
 
 
 # Static files (CSS, JavaScript, Images)
@@ -159,8 +164,30 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CSRF_FAILURE_VIEW = "pages.views.csrf_failure"
 
+MEDIA_URL='/media/'
+
 MEDIA_ROOT = BASE_DIR / "media"
 
 EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
 
-EMAIL_FILE_PATH = BASE_DIR / "sent_emails"
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'media')
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated', 
+    ],
+
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+
+}
+
+CORS_URLS_REGEX = r'^/api/.*$'
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+]

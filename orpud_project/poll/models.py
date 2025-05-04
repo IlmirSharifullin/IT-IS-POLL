@@ -4,38 +4,47 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 
 import mongoengine
-from mongoengine import Document, StringField, DateTimeField, IntField, ListField, ReferenceField
+from mongoengine import (
+    Document,
+    StringField,
+    DateTimeField,
+    IntField,
+    ListField,
+    ReferenceField,
+    DynamicField,
+)
 
-User = get_user_model()
+mongoengine.connect(
+    settings.DATABASES["mongodb"]["database"],
+    host=settings.DATABASES["mongodb"]["host"],
+    port=settings.DATABASES["mongodb"]["port"],
+    username=settings.DATABASES["mongodb"]["username"],
+    password=settings.DATABASES["mongodb"]["password"],
+)
 
-mongoengine.connect(settings.DATABASES['mongodb']['database'], host=settings.DATABASES['mongodb']['host'], port=settings.DATABASES['mongodb']['port'], username=settings.DATABASES['mongodb']['username'], password=settings.DATABASES['mongodb']['password'])
+
+class DateTimeDocument(Document):
+    created_at = DateTimeField(default=datetime.datetime.now)
+    updated_at = DateTimeField(default=datetime.datetime.now)
+
+    meta = {"abstract": True}
 
 
-class Question(Document):
-    type = StringField()
-
-    question = StringField()
+class Question(DateTimeDocument):
+    type = StringField(required=True)
+    question = StringField(required=True)
     options = ListField(StringField())
 
-    created_at = DateTimeField(default=datetime.datetime.now)
-    updated_at = DateTimeField(default=datetime.datetime.now)
 
-
-class Poll(Document):
+class Poll(DateTimeDocument):
+    author_id = IntField(required=True)
     title = StringField(max_length=200)
     description = StringField(max_length=200)
-
-    author_id = IntField()
     questions = ListField(ReferenceField(Question))
 
-    created_at = DateTimeField(default=datetime.datetime.now)
-    updated_at = DateTimeField(default=datetime.datetime.now)
 
-
-class Answer(Document):
+class Answer(DateTimeDocument):
+    answerer_id = IntField(required=True)
+    poll = ReferenceField(Poll)
     question = ReferenceField(Question)
-    answerer_id = IntField()
-    answers = ListField(StringField())
-
-    created_at = DateTimeField(default=datetime.datetime.now)
-    updated_at = DateTimeField(default=datetime.datetime.now)
+    answers = DynamicField(required=True)

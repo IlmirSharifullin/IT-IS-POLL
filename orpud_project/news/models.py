@@ -1,8 +1,8 @@
 from django.db import models
 
-# Create your models here.
-from django.db import models
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class TimestampMixin(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -10,16 +10,6 @@ class TimestampMixin(models.Model):
 
     class Meta:
         abstract = True
-
-
-class User(TimestampMixin, models.Model):
-    user_id = models.AutoField(primary_key=True)
-    email = models.EmailField(unique=True)
-    hashed_password = models.CharField(max_length=255)
-    bio = models.TextField(max_length=255, blank=True)
-
-    def __str__(self):
-        return self.email
 
 
 class News(TimestampMixin, models.Model):
