@@ -9,9 +9,11 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
@@ -50,11 +52,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "drf_yasg",
     "user.apps.UserConfig",
-    'rest_framework.authtoken',
-    'rest_framework',
-    'corsheaders',
-    'djoser',
+    "rest_framework.authtoken",
+    "rest_framework",
+    "corsheaders",
+    "djoser",
     "pages.apps.PagesConfig",
     "poll.apps.PollConfig",
     "news.apps.NewsConfig",
@@ -63,7 +66,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    'corsheaders.middleware.CorsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -95,15 +98,15 @@ WSGI_APPLICATION = "orpud_project.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-         'ENGINE': 'django.db.backends.{}'.format(
-             os.getenv('DATABASE_ENGINE', 'sqlite3')
-         ),
-         'NAME': os.getenv('DATABASE_NAME', 'itispoll'),
-         'USER': os.getenv('DATABASE_USERNAME', 'itispoll'),
-         'PASSWORD': os.getenv('DATABASE_PASSWORD', 'password'),
-         'HOST': os.getenv('DATABASE_HOST', '127.0.0.1'),
-         'PORT': os.getenv('DATABASE_PORT', 5432),
+    "default": {
+        "ENGINE": "django.db.backends.{}".format(
+            os.getenv("DATABASE_ENGINE", "sqlite3")
+        ),
+        "NAME": os.getenv("DATABASE_NAME", "itispoll"),
+        "USER": os.getenv("DATABASE_USERNAME", "itispoll"),
+        "PASSWORD": os.getenv("DATABASE_PASSWORD", "password"),
+        "HOST": os.getenv("DATABASE_HOST", "127.0.0.1"),
+        "PORT": os.getenv("DATABASE_PORT", 5432),
     },
     "mongodb": {
         "host": os.getenv("MONGODB_HOST", "localhost"),
@@ -111,7 +114,7 @@ DATABASES = {
         "database": os.getenv("MONGODB_DB", "orpud_project"),
         "username": os.getenv("MONGODB_USER", "itispoll"),
         "password": os.getenv("MONGODB_PASS", "password"),
-    }
+    },
 }
 
 
@@ -164,30 +167,54 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CSRF_FAILURE_VIEW = "pages.views.csrf_failure"
 
-MEDIA_URL='/media/'
+MEDIA_URL = "/media/"
 
 MEDIA_ROOT = BASE_DIR / "media"
 
 EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
 
-EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'media')
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, "media")
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated', 
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
     ],
-
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
-
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
-
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.UserRateThrottle",
+        # Не будем подключать класс AnonRateThrottle глобально.
+        # Подключим его только в тех view-классах или вьюсетах,
+        # где надо установить лимиты для анонимов
+        "rest_framework.throttling.AnonRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "10000/day",  # Лимит для UserRateThrottle
+        "anon": "10000/day",  # Лимит для AnonRateThrottle
+    },
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
 }
 
-CORS_URLS_REGEX = r'^/api/.*$'
+SIMPLE_JWT = {
+    # Устанавливаем срок жизни токена
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=31),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+SWAGGER_SETTINGS = {
+   'SECURITY_DEFINITIONS': {
+      'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+      }
+   }
+} 
+
+CORS_URLS_REGEX = r"^/api/.*$"
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
+    "http://localhost:3000",
 ]

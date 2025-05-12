@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     ports:
-      - ":5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -44,7 +44,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASS}
       MONGO_INITDB_DATABASE: ${MONGODB_DB}
     ports:
-      - ":27017"
+      - "27018:27017"
     volumes:
       - mongodb_data:/data/db
     networks:
