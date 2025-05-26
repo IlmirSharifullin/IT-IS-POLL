@@ -2,14 +2,18 @@ import React, { useState } from 'react';
 import '../styles/reg.css';
 
 function Register() {
+  // Твой API токен для Authorization (замени на актуальный)
+  const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwMjU5NjQ2LCJpYXQiOjE3NDc1ODEyNDYsImp0aSI6Ijk3MGQyNzkxOTY1MTRmOWRhZjdiNzU4ZDllYWMyMWVhIiwidXNlcl9pZCI6MX0.p-JNeKgSq7umjB1lm3A30FaUzExTDCQ6HDYp0Hgi9FA';
+
   const [formData, setFormData] = useState({
-    username: 'admin',
-    email: 'admin@mail.ru',
-    password: 'admin',
-    confirmPassword: 'admin',
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
   });
 
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,25 +26,28 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Валидация
+    // Валидация формы
     if (!formData.username.trim() || !formData.email.trim() || !formData.password) {
       setError('Пожалуйста, заполните все обязательные поля');
+      setSuccess(null);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Пароли не совпадают');
+      setSuccess(null);
       return;
     }
 
     setError(null);
+    setSuccess(null);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/v1/users/', {
+      const response = await fetch('http://localhost:8000/api/v1/users/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwMjU5NjQ2LCJpYXQiOjE3NDc1ODEyNDYsImp0aSI6Ijk3MGQyNzkxOTY1MTRmOWRhZjdiNzU4ZDllYWMyMWVhIiwidXNlcl9pZCI6MX0.p-JNeKgSq7umjB1lm3A30FaUzExTDCQ6HDYp0Hgi9FA`, // Добавляем токен в заголовок
+          'Authorization': `Bearer ${TOKEN}`, // Обязательно с пробелом после Bearer
         },
         body: JSON.stringify({
           username: formData.username,
@@ -49,12 +56,15 @@ function Register() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || 'Ошибка при регистрации');
+        // Если сервер вернул ошибку — показываем её
+        throw new Error(data.detail || JSON.stringify(data));
       }
 
-      alert('Регистрация прошла успешно!');
+      // Если всё успешно
+      setSuccess('Регистрация прошла успешно!');
       setFormData({
         username: '',
         email: '',
@@ -125,6 +135,7 @@ function Register() {
           </div>
 
           {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+          {success && <div style={{ color: 'green', marginBottom: '10px' }}>{success}</div>}
 
           <button className="auth__button" type="submit">Зарегистрироваться</button>
         </form>

@@ -1,176 +1,105 @@
-body {
+/* Сброс и базовые стили */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
   font-family: 'Inter', Arial, sans-serif;
-  /* или */
-  /* font-family: 'Montserrat', Arial, sans-serif; */
+  background: var(--color-bg, #18181B);
+  overflow: hidden; /* отключаем скролл */
 }
 
-html, body {
-  overflow-y: hidden; /* Отключает вертикальный скролл */
-}
-/* Базовые цвета из второго изображения */
-:root {
-  --color-bg: #18181B;
-  --color-panel: #232329;
-  --color-primary: #FF2424;
-  --color-text: #fff;
-  --color-accent: #6366F1;
-  --color-divider: #393942;
-  --color-input-bg: #232329;
-  --color-input-border: #393942;
-  --color-placeholder: #8a8a93;
-}
-
+/* Фон с декоративными фигурами */
 .page {
-  min-height: 100vh;
-  background: var(--color-bg);
-  font-family: 'Inter', Arial, sans-serif;
-  color: var(--color-text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--color-bg, #18181B);
+  overflow: hidden;
+  z-index: 0;
 }
 
-.auth {
-  display: flex;
+/* Основные большие фигуры */
+.page::before,
+.page::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.3;
+  z-index: -1;
+}
+
+.page::before {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle at center, #6366F1, transparent 70%);
+  top: 5%;
+  left: 5%;
+}
+
+.page::after {
   width: 800px;
+  height: 800px;
+  background: radial-gradient(circle at center, #FF2424, transparent 70%);
+  bottom: 10%;
+  right: 10%;
+}
+
+/* Дополнительные мелкие фигуры */
+.page::nth-child(3) {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle at center, #22c55e, transparent 70%);
+  top: 40%;
+  right: 20%;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.25;
+  z-index: -1;
+}
+
+/* Центрируем окно регистрации */
+.auth {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 1100px; /* увеличена ширина */
+  max-width: 95vw;
   min-height: 480px;
-  background: var(--color-panel);
+  background: var(--color-panel, #232329);
   border-radius: 24px;
   box-shadow: 0 4px 32px rgba(0,0,0,0.45);
   overflow: hidden;
+  display: flex;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  box-sizing: border-box;
+  padding: 0;
 }
 
+/* Левая часть с формой */
 .auth__container {
   flex: 1 1 50%;
-  padding: 48px 40px;
+  padding: 48px 60px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: var(--color-panel);
-
+  background: var(--color-panel, #232329);
+  box-sizing: border-box;
 }
 
+/* Заголовок */
 .auth__title {
-  font-size: 2.2rem;
+  font-size: 2.4rem;
   font-weight: 700;
   margin-bottom: 32px;
   letter-spacing: 0.5px;
-  text-align: center; /* Центрируем заголовок */
-}
-
-.auth__form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.auth__field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.auth__label {
-  font-size: 1rem;
-  color: var(--color-text);
-  opacity: 0.85;
-}
-
-.auth__input {
-  background: var(--color-input-bg);
-  border: 1px solid var(--color-input-border);
-  border-radius: 8px;
-  color: var(--color-text);
-  padding: 12px 16px;
-  font-size: 1rem;
-  outline: none;
-  transition: border 0.2s;
-}
-
-.auth__input::placeholder {
-  color: var(--color-placeholder);
-}
-
-.auth__input:focus {
-  border-color: var(--color-accent);
-}
-
-.auth__button {
-  margin-top: 12px;
-  padding: 14px 0;
-  background: var(--color-primary);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.auth__button:hover {
-  background: #d91b1b;
-}
-
-.auth__divider {
   text-align: center;
-  margin: 28px 0 18px 0;
-  color: var(--color-divider);
-  font-size: 1rem;
-  position: relative;
+  color: var(--color-text, #fff);
 }
 
-.auth__divider::before,
-.auth__divider::after {
-  content: "";
-  display: inline-block;
-  width: 40px;
-  height: 1px;
-  background: var(--color-divider);
-  vertical-align: middle;
-  margin: 0 8px;
-}
-
-.auth__social {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.auth__social-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px 0;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  background: #232329;
-  color: #fff;
-  transition: background 0.2s;
-}
-
-.auth__social-btn--google {
-  background: #fff;
-  color: #232329;
-}
-
-.auth__social-btn--google:hover {
-  background: #ececec;
-}
-
-.auth__social-btn--GitHub {
-  background: #1877f2;
-  color: #fff;
-}
-
-.auth__social-btn--GitHub:hover {
-  background: #145db2;
-}
-
+/* Правая часть с информацией */
 .auth__side {
   flex: 1 1 50%;
   background: linear-gradient(135deg, #232329 60%, #6366F1 100%);
@@ -178,14 +107,15 @@ html, body {
   align-items: center;
   justify-content: center;
   position: relative;
+  box-sizing: border-box;
 }
 
 .auth__side-content {
   padding: 36px 24px;
   border-radius: 16px;
-  background: rgba(24,24,27,0.85);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
-  max-width: 320px;
+  background: rgba(24, 24, 27, 0.85);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  max-width: 360px;
 }
 
 .auth__side-text {
@@ -193,4 +123,30 @@ html, body {
   font-weight: 600;
   color: #fff;
   text-align: center;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+  .auth {
+    width: 95vw;
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .auth__container,
+  .auth__side {
+    flex: none;
+    width: 100%;
+    padding: 32px 24px;
+  }
+
+  .auth__side-content {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .auth__title {
+    font-size: 2rem;
+  }
 }

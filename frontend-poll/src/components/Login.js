@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/auth.css';
 
-const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwMjU5NjQ2LCJpYXQiOjE3NDc1ODEyNDYsImp0aSI6Ijk3MGQyNzkxOTY1MTRmOWRhZjdiNzU4ZDllYWMyMWVhIiwidXNlcl9pZCI6MX0.p-JNeKgSq7umjB1lm3A30FaUzExTDCQ6HDYp0Hgi9FA';
-
 function Login({ onLogin }) {
   const [formData, setFormData] = useState({
-    username: 'admin',
-    password: 'admin',
+    username: '',
+    password: '',
   });
 
   const [error, setError] = useState(null);
@@ -32,14 +30,10 @@ function Login({ onLogin }) {
     setError(null);
 
     try {
-      // Вход — обычно на отдельный эндпоинт, например /api/v1/login/
-      // Если у тебя другой URL — замени здесь
-      const response = await fetch('http://127.0.0.1:8000/api/v1/login/', {
+      const response = await fetch('http://localhost:8000/api/v1/login/', { // замени URL, если нужно
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Токен обычно не нужен при логине, но если нужен, добавь:
-          'Authorization': `Bearer ${TOKEN}`,
         },
         body: JSON.stringify({
           username: formData.username,
@@ -47,15 +41,17 @@ function Login({ onLogin }) {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.detail || 'Ошибка при входе');
       }
 
-      const data = await response.json();
-
-      // Сохраняем токен, который вернул сервер, если есть
-      const tokenFromServer = data.token || TOKEN;
+      // Предполагается, что сервер возвращает токен в поле data.token
+      const tokenFromServer = data.token;
+      if (!tokenFromServer) {
+        throw new Error('Токен не получен от сервера');
+      }
 
       localStorage.setItem('token', tokenFromServer);
 
