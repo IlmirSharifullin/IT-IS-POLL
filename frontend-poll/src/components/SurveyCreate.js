@@ -87,7 +87,7 @@ function SurveyCreate() {
   };
 
   return (
-    <div className="survey-create" role="main" aria-label="Создание опроса">
+    <div className="survey-create">
       <form className="survey-create__form" onSubmit={handleSubmit} noValidate>
         <h1 className="survey-create__title">Создать опрос</h1>
 
@@ -186,6 +186,23 @@ function SurveyCreate() {
           {loading ? 'Создаём...' : 'Создать опрос'}
         </button>
       </form>
+      <div className="survey-create__preview">
+        <div className="survey-create__preview-title">{surveyTitle || 'Название опроса'}</div>
+        <div className="survey-create__preview-description">{surveyDescription || 'Описание опроса...'}</div>
+        {questions.map((q, idx) => (
+          <div className="survey-create__preview-question" key={idx}>
+            <div className="survey-create__preview-question-title">{q.text || 'Текст вопроса...'}</div>
+            {(q.type === 'radio' || q.type === 'checkbox') && (
+              <ul className="survey-create__preview-options">
+                {q.options.split(',').map((opt, i) =>
+                  <li className="survey-create__preview-option" key={i}>{opt.trim() || 'Вариант'}</li>
+                )}
+              </ul>
+            )}
+            {q.type === 'text' && <div className="survey-create__preview-option" style={{opacity: 0.7}}>Текстовый ответ</div>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

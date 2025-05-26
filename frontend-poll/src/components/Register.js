@@ -40,7 +40,7 @@ function Register() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          //'Authorization': `Bearer ${TOKEN}`, // Добавляем токен в заголовок
+          'Authorization': `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwMjU5NjQ2LCJpYXQiOjE3NDc1ODEyNDYsImp0aSI6Ijk3MGQyNzkxOTY1MTRmOWRhZjdiNzU4ZDllYWMyMWVhIiwidXNlcl9pZCI6MX0.p-JNeKgSq7umjB1lm3A30FaUzExTDCQ6HDYp0Hgi9FA`, // Добавляем токен в заголовок
         },
         body: JSON.stringify({
           username: formData.username,
