@@ -1,4 +1,5 @@
 import React, {useContext, useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import {AuthContext} from '../context/AuthContext';
 import '../styles/profile.css';
 
@@ -90,7 +91,40 @@ function BackgroundShapes() {
 }
 
 function Profile() {
-    const {user} = useContext(AuthContext);
+    const {user, token} = useContext(AuthContext);
+    const [createdSurveys, setCreatedSurveys] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        async function fetchCreatedSurveys() {
+            if (!user || !token) return;
+
+            setLoading(true);
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/api/v1/polls/?author_id=${user.id}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка загрузки созданных опросов: ${response.status}`);
+                }
+
+                const data = await response.json();
+                setCreatedSurveys(data.results || []);
+            } catch (error) {
+                setError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchCreatedSurveys();
+    }, [user, token]);
 
     if (!user) {
         return (
@@ -112,8 +146,37 @@ function Profile() {
                 <section className="profile-container">
                     <h1 className="profile-title">Профиль пользователя</h1>
                     <p className="profile-nickname">
-                        Ник: <span className="profile-nickname--highlight">{user.username}</span>
+                        <span className="profile-nickname--highlight">{user.username}</span>
                     </p>
+
+                    {loading && <p>Загрузка созданных опросов...</p>}
+                    {error && <p style={{color: 'red'}}>Ошибка: {error}</p>}
+
+                    {createdSurveys.length > 0 ? (
+                        <>
+                            <h3>Созданные опросы:</h3>
+                            <ul className="survey-list">
+                                {createdSurveys.map(survey => (
+                                    <li
+                                        key={survey.id}
+                                        className="survey-list__item"
+                                        tabIndex={0}
+                                        role="button"
+                                        onClick={() => navigate(`/survey/${survey.id}`)}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') navigate(`/survey/${survey.id}`);
+                                        }}
+                                    >
+                                        <h4 className="survey-title">{survey.title}</h4>
+                                        {survey.description &&
+                                            <p className="survey-description">{survey.description}</p>}
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    ) : (
+                        <p>Вы ещё не создали опросы.</p>
+                    )}
                 </section>
             </main>
         </>

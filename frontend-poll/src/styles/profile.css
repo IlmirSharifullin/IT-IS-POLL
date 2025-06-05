@@ -16,28 +16,25 @@ html, body {
     background: var(--color-bg);
     font-family: 'Inter', Arial, sans-serif;
     color: var(--color-text);
-    overflow: hidden;
+    overflow: auto; /* чтобы была прокрутка */
 }
 
 .profile-wrapper {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    position: relative;
+    min-height: 100vh;
 
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
 
-    padding: 20px;
+    padding: 40px 20px;
     box-sizing: border-box;
 
     z-index: 1;
 }
 
 .profile-container {
-    max-width: 600px;
+    max-width: 900px; /* увеличена ширина */
     min-height: 320px;
     background: var(--color-panel);
     border-radius: 24px;
@@ -47,10 +44,10 @@ html, body {
     background: linear-gradient(135deg, #232329 70%, #6366F1 200%);
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 40px 30px;
-    text-align: center;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 40px 50px;
+    text-align: left;
 }
 
 .profile-container--empty {
@@ -71,12 +68,17 @@ html, body {
     font-size: 1.8rem;
     font-weight: 600;
     color: var(--color-text);
+    text-align: center; /* центрируем текст внутри родителя */
+    width: 100%; /* чтобы занять всю ширину */
 }
 
 .profile-nickname--highlight {
     color: var(--color-accent);
     margin-left: 8px;
+    text-align: center;
+    display: block; /* чтобы text-align сработал */
 }
+
 
 .background-shapes {
     position: fixed;
@@ -95,4 +97,42 @@ html, body {
     border-radius: 50%;
     transform: translate(-50%, -50%);
     transition: background 0.3s;
+}
+
+.survey-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.survey-list__item {
+    background: rgba(99, 102, 241, 0.04);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer; /* курсор указателя для кликабельности */
+}
+
+.survey-list__item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 12px rgba(99, 102, 241, 0.08);
+}
+
+.survey-title {
+    margin: 0 0 8px 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.survey-description {
+    margin: 0;
+    color: #9ca3af;
+    font-size: 1rem;
+    line-height: 1.4;
 }

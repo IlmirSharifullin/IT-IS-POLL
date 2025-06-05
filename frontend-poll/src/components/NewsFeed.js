@@ -1,7 +1,99 @@
-import React, {useEffect, useState, useContext} from 'react';
-import {useNavigate} from 'react-router-dom';
+import React, {useEffect, useState, useContext, useCallback} from 'react';
 import {AuthContext} from '../context/AuthContext';
 import '../styles/news_feed.css';
+
+const NUM_SHAPES = 5;
+
+function BackgroundShapes() {
+    const [shapes, setShapes] = useState([]);
+
+    useEffect(() => {
+        const initialShapes = [];
+        for (let i = 0; i < NUM_SHAPES; i++) {
+            initialShapes.push({
+                id: i,
+                size: 200 + Math.random() * 200,
+                top: Math.random() * 80 + 10,
+                left: Math.random() * 80 + 10,
+                directionX: Math.random() > 0.5 ? 1 : -1,
+                directionY: Math.random() > 0.5 ? 1 : -1,
+                speedX: 0.02 + Math.random() * 0.03,
+                speedY: 0.01 + Math.random() * 0.02,
+                blur: 80 + Math.random() * 40,
+                color: i % 2 === 0 ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255, 36, 36, 0.3)',
+            });
+        }
+        setShapes(initialShapes);
+    }, []);
+
+    useEffect(() => {
+        let animationFrameId;
+
+        function animate() {
+            setShapes(prevShapes =>
+                prevShapes.map(shape => {
+                    let newLeft = shape.left + shape.speedX * shape.directionX;
+                    let newTop = shape.top + shape.speedY * shape.directionY;
+
+                    if (newLeft > 90) {
+                        newLeft = 90;
+                        shape.directionX = -1;
+                    } else if (newLeft < 5) {
+                        newLeft = 5;
+                        shape.directionX = 1;
+                    }
+
+                    if (newTop > 90) {
+                        newTop = 90;
+                        shape.directionY = -1;
+                    } else if (newTop < 5) {
+                        newTop = 5;
+                        shape.directionY = 1;
+                    }
+
+                    return {
+                        ...shape,
+                        left: newLeft,
+                        top: newTop,
+                        directionX: shape.directionX,
+                        directionY: shape.directionY,
+                    };
+                })
+            );
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        animationFrameId = requestAnimationFrame(animate);
+
+        return () => cancelAnimationFrame(animationFrameId);
+    }, []);
+
+    return (
+        <div className="background-shapes">
+            {shapes.map(shape => (
+                <div
+                    key={shape.id}
+                    className="background-shape"
+                    style={{
+                        width: shape.size,
+                        height: shape.size,
+                        top: `${shape.top}%`,
+                        left: `${shape.left}%`,
+                        background: `radial-gradient(circle at center, ${shape.color}, transparent 70%)`,
+                        filter: `blur(${shape.blur}px)`,
+                    }}
+                />
+            ))}
+        </div>
+    );
+}
+
+function formatDate(dateString) {
+    const options = {year: 'numeric', month: 'long', day: 'numeric'};
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', options);
+}
 
 function NewsFeed() {
     const {user, token} = useContext(AuthContext);
@@ -12,11 +104,7 @@ function NewsFeed() {
     const [commentTexts, setCommentTexts] = useState({});
     const [submittingComment, setSubmittingComment] = useState({});
     const [likes, setLikes] = useState({});
-    const [refreshFlag, setRefreshFlag] = useState(false); // <-- Добавлено состояние
 
-    const navigate = useNavigate();
-
-    // Загрузка пользователей и новостей при монтировании и при обновлении refreshFlag
     useEffect(() => {
         async function fetchUsers() {
             try {
@@ -54,9 +142,8 @@ function NewsFeed() {
 
         fetchUsers();
         fetchNews();
-    }, [token, refreshFlag]);
+    }, [token]);
 
-    // Загрузка лайков для новостей
     useEffect(() => {
         if (!token || newsList.length === 0) return;
 
@@ -86,8 +173,7 @@ function NewsFeed() {
         fetchLikes();
     }, [newsList, token, user]);
 
-    // Переключение лайка без перезагрузки всей новости
-    const handleLikeToggle = async (newsId) => {
+    const handleLikeToggle = async newsId => {
         if (!token) {
             alert('Только авторизованные пользователи могут ставить лайки');
             return;
@@ -145,7 +231,129 @@ function NewsFeed() {
         setCommentTexts(prev => ({...prev, [newsId]: text}));
     };
 
-    const handleCommentSubmit = async (newsId) => {
+    // Добавляем функцию для обновления комментариев локально
+    const addCommentToList = useCallback(
+        (newsId, newComment) => {
+            setNewsList(prevNewsList =>
+                prevNewsList.map(news => {
+                    if (news.id === newsId) {
+                        const comments = news.comments ? [...news.comments, newComment] : [newComment];
+                        return {...news, comments};
+                    }
+                    return news;
+                })
+            );
+        },
+        [setNewsList]
+    );
+
+    const getAuthorName = authorId => {
+        const user = users.find(u => u.id === authorId);
+        return user ? user.username : `Пользователь #${authorId}`;
+    };
+
+    if (loading) return <p>Загрузка новостей...</p>;
+    if (error) return <p style={{color: 'red'}}>Ошибка: {error}</p>;
+
+    return (
+        <>
+            <BackgroundShapes/>
+            <main className="news-feed" style={{position: 'relative', zIndex: 1, padding: '20px'}}>
+                <h1>Новости</h1>
+
+                {newsList.length === 0 && <p>Новостей пока нет.</p>}
+
+                {newsList.map(news => (
+                    <article key={news.id} className="news-item" aria-label={`Новость: ${news.title}`}>
+                        <h2>{news.title}</h2>
+                        <p className="text">{news.text}</p>
+                        {news.image && <img src={news.image} alt={news.title}/>}
+
+                        <div style={{display: 'flex', alignItems: 'center', gap: '16px', marginBottom: 10}}>
+                            <button
+                                onClick={() => handleLikeToggle(news.id)}
+                                aria-pressed={likes[news.id]?.liked || false}
+                                className={`like-btn ${likes[news.id]?.liked ? 'liked' : ''}`}
+                            >
+                                {likes[news.id]?.liked ? '❤️ Лайк' : '🤍 Лайк'}
+                            </button>
+                            <span style={{color: '#6366F1', fontWeight: 700}}>{likes[news.id]?.count || 0} лайков</span>
+                        </div>
+
+                        <section className="comments-section" aria-label="Комментарии">
+                            <h3>Комментарии</h3>
+                            <Comments
+                                newsId={news.id}
+                                users={users}
+                                getAuthorName={getAuthorName}
+                                commentTexts={commentTexts}
+                                onCommentChange={handleCommentChange}
+                                submittingComment={submittingComment}
+                                setSubmittingComment={setSubmittingComment}
+                                addCommentToList={addCommentToList}
+                                token={token}
+                            />
+                        </section>
+                    </article>
+                ))}
+            </main>
+            <style>{`
+        .background-shapes {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          overflow: hidden;
+          z-index: 0;
+          pointer-events: none;
+          background: #18181B;
+        }
+        .background-shape {
+          position: absolute;
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          transition: background 0.3s;
+        }
+      `}</style>
+        </>
+    );
+}
+
+function Comments({
+                      newsId,
+                      users,
+                      getAuthorName,
+                      commentTexts,
+                      onCommentChange,
+                      submittingComment,
+                      setSubmittingComment,
+                      addCommentToList,
+                      token,
+                  }) {
+    const [comments, setComments] = useState([]);
+    const [loadingComments, setLoadingComments] = useState(true);
+
+    useEffect(() => {
+        async function fetchComments() {
+            setLoadingComments(true);
+            try {
+                const res = await fetch(`http://127.0.0.1:8000/api/v1/news/${newsId}/comments/`);
+                if (!res.ok) throw new Error('Ошибка загрузки комментариев');
+                const data = await res.json();
+                setComments(Array.isArray(data.results) ? data.results : []);
+            } catch {
+                setComments([]);
+            } finally {
+                setLoadingComments(false);
+            }
+        }
+
+        fetchComments();
+    }, [newsId]);
+
+    const handleSubmit = async e => {
+        e.preventDefault();
         if (!token) {
             alert('Только авторизованные пользователи могут оставлять комментарии');
             return;
@@ -163,14 +371,17 @@ function NewsFeed() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({news: newsId, text}), // <-- ВАЖНО: добавлено поле news
+                body: JSON.stringify({news: newsId, text}),
             });
             if (!res.ok) {
                 const errData = await res.json();
                 throw new Error(errData.detail || 'Ошибка при отправке комментария');
             }
-            setCommentTexts(prev => ({...prev, [newsId]: ''}));
-            setRefreshFlag(f => !f); // обновляем комментарии
+            const newComment = await res.json();
+            // Добавляем новый комментарий локально
+            setComments(prev => [...prev, newComment]);
+            addCommentToList(newsId, newComment);
+            onCommentChange(newsId, '');
         } catch (err) {
             alert(err.message);
         } finally {
@@ -178,106 +389,31 @@ function NewsFeed() {
         }
     };
 
-
-    if (loading) return <p>Загрузка новостей...</p>;
-    if (error) return <p style={{color: 'red'}}>Ошибка: {error}</p>;
-
-    return (
-        <main className="news-feed">
-            <h1>Новости</h1>
-
-            {newsList.length === 0 && <p>Новостей пока нет.</p>}
-
-            {newsList.map(news => (
-                <article key={news.id} className="news-item" aria-label={`Новость: ${news.title}`}>
-                    <h2>{news.title}</h2>
-                    <p className="text">{news.text}</p>
-                    {news.image && <img src={news.image} alt={news.title}/>}
-
-                    <div style={{display: 'flex', alignItems: 'center', gap: '16px', marginBottom: 10}}>
-                        <button
-                            onClick={() => handleLikeToggle(news.id)}
-                            aria-pressed={likes[news.id]?.liked || false}
-                            className={`like-btn ${likes[news.id]?.liked ? 'liked' : ''}`}
-                        >
-                            {likes[news.id]?.liked ? '❤️ Лайк' : '🤍 Лайк'}
-                        </button>
-                        <span style={{color: '#6366F1', fontWeight: 700}}>
-                            {likes[news.id]?.count || 0} лайков
-                        </span>
-                    </div>
-
-                    <section className="comments-section" aria-label="Комментарии">
-                        <h3>Комментарии</h3>
-                        <Comments newsId={news.id} refreshFlag={refreshFlag} users={users}/>
-
-                        {token ? (
-                            <form
-                                onSubmit={e => {
-                                    e.preventDefault();
-                                    handleCommentSubmit(news.id);
-                                }}
-                                className="comment-form"
-                            >
-                                <textarea
-                                    value={commentTexts[news.id] || ''}
-                                    onChange={e => handleCommentChange(news.id, e.target.value)}
-                                    rows={3}
-                                    placeholder="Оставьте комментарий"
-                                    required
-                                />
-                                <button type="submit" disabled={submittingComment[news.id]}>
-                                    {submittingComment[news.id] ? 'Отправка...' : 'Отправить'}
-                                </button>
-                            </form>
-                        ) : (
-                            <p className="login-prompt">Войдите, чтобы оставить комментарий</p>
-                        )}
-                    </section>
-                </article>
-            ))}
-        </main>
-    );
-}
-
-function Comments({newsId, refreshFlag, users}) {
-    const [comments, setComments] = React.useState([]);
-    const [loadingComments, setLoadingComments] = React.useState(true);
-
-    React.useEffect(() => {
-        async function fetchComments() {
-            setLoadingComments(true);
-            try {
-                const res = await fetch(`http://127.0.0.1:8000/api/v1/news/${newsId}/comments/`);
-                if (!res.ok) throw new Error('Ошибка загрузки комментариев');
-                const data = await res.json();
-                setComments(Array.isArray(data.results) ? data.results : []);
-            } catch {
-                setComments([]);
-            } finally {
-                setLoadingComments(false);
-            }
-        }
-
-        fetchComments();
-    }, [newsId, refreshFlag]);
-
-    const getAuthorName = (authorId) => {
-        const user = users.find(u => u.id === authorId);
-        return user ? user.username : `Пользователь #${authorId}`;
-    };
-
     if (loadingComments) return <p>Загрузка комментариев...</p>;
     if (!comments.length) return <p>Комментариев пока нет.</p>;
 
     return (
-        <ul className="comments-list" aria-label="Список комментариев">
-            {comments.map(comment => (
-                <li key={comment.id} aria-label={`Комментарий пользователя ${getAuthorName(comment.author)}`}>
-                    <strong>{getAuthorName(comment.author)}:</strong> {comment.text}
-                </li>
-            ))}
-        </ul>
+        <>
+            <ul className="comments-list" aria-label="Список комментариев">
+                {comments.map(comment => (
+                    <li key={comment.id} aria-label={`Комментарий пользователя ${getAuthorName(comment.author)}`}>
+                        <strong>{getAuthorName(comment.author)}:</strong> {comment.text}
+                    </li>
+                ))}
+            </ul>
+            <form onSubmit={handleSubmit} className="comment-form">
+        <textarea
+            value={commentTexts[newsId] || ''}
+            onChange={e => onCommentChange(newsId, e.target.value)}
+            rows={3}
+            placeholder="Оставьте комментарий"
+            required
+        />
+                <button type="submit" disabled={submittingComment[newsId]}>
+                    {submittingComment[newsId] ? 'Отправка...' : 'Отправить'}
+                </button>
+            </form>
+        </>
     );
 }
 

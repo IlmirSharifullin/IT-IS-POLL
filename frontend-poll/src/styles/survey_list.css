@@ -4,7 +4,8 @@ html, body {
 }
 
 .survey-list {
-    max-width: 800px;
+    max-width: 1000px;
+    width: 100%;
     margin: 40px auto;
     padding: 0 20px;
     font-family: 'Inter', Arial, sans-serif;
@@ -12,6 +13,10 @@ html, body {
     background: var(--color-panel, #232329);
     border-radius: 24px;
     box-shadow: 0 4px 32px rgba(0, 0, 0, 0.45);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Центрируем содержимое по горизонтали */
 }
 
 .survey-list__title {
@@ -20,12 +25,14 @@ html, body {
     margin: 24px 0;
     text-align: center;
     color: var(--color-text, #fff);
+    width: 100%;
 }
 
 .survey-list__items {
     list-style: none;
     padding: 0;
     margin: 0;
+    width: 100%; /* чтобы список занял всю ширину контейнера */
 }
 
 .survey-list__item {
@@ -40,6 +47,8 @@ html, body {
 
     transition: background-color 0.3s ease, transform 0.1s ease;
     user-select: none;
+
+    width: 100%; /* чтобы каждый элемент занимал всю ширину списка */
 }
 
 .survey-list__item:last-child {
