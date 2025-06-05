@@ -30,7 +30,7 @@ class NewsCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NewsComment
-        fields = ("id", "author", "text")
+        fields = ("id", "news", "author", "text")
         read_only_fields = ('author', 'created_at', 'updated_at')
 
 
