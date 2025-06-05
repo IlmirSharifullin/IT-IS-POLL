@@ -49,7 +49,15 @@ const icons = {
             <line x1="9" y1="14" x2="15" y2="14"/>
         </svg>
     ),
+    profile: (
+        <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+             strokeLinejoin="round" viewBox="0 0 24 24">
+            <circle cx="12" cy="7" r="4"/>
+            <path d="M5.5 21a8.38 8.38 0 0113 0"/>
+        </svg>
+    ),
 };
+
 
 const Navbar = () => {
     const {user, logout} = useContext(AuthContext);
@@ -79,25 +87,34 @@ const Navbar = () => {
                 </NavLink>
 
                 {user && (
-                    <NavLink
-                        to="/news"
-                        style={({isActive}) => (isActive ? {...styles.link, ...activeStyle} : styles.link)}
-                        title="Новости"
-                        aria-label="Новости"
-                    >
-                        {icons.news}
-                    </NavLink>
-                )}
+                    <>
+                        <NavLink
+                            to="/news"
+                            style={({isActive}) => (isActive ? {...styles.link, ...activeStyle} : styles.link)}
+                            title="Новости"
+                            aria-label="Новости"
+                        >
+                            {icons.news}
+                        </NavLink>
 
-                {user && (
-                    <NavLink
-                        to="/create"
-                        style={({isActive}) => (isActive ? {...styles.link, ...activeStyle} : styles.link)}
-                        title="Создать опрос"
-                        aria-label="Создать опрос"
-                    >
-                        {icons.create}
-                    </NavLink>
+                        <NavLink
+                            to="/create"
+                            style={({isActive}) => (isActive ? {...styles.link, ...activeStyle} : styles.link)}
+                            title="Создать опрос"
+                            aria-label="Создать опрос"
+                        >
+                            {icons.create}
+                        </NavLink>
+
+                        <NavLink
+                            to="/profile"
+                            style={({isActive}) => (isActive ? {...styles.link, ...activeStyle} : styles.link)}
+                            title="Профиль"
+                            aria-label="Профиль"
+                        >
+                            {icons.profile}
+                        </NavLink>
+                    </>
                 )}
 
                 {!user && (
@@ -134,6 +151,7 @@ const Navbar = () => {
                     </button>
                 )}
             </div>
+
         </nav>
     );
 };
