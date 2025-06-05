@@ -24,7 +24,7 @@ body {
 .survey-create {
   display: flex;
   width: 1000px;
-  min-height: 600px;
+  min-height: 800px; /* увеличена высота */
   margin: 40px auto;
   background: var(--color-panel);
   border-radius: 24px;
@@ -40,7 +40,7 @@ body {
   gap: 24px;
   background: var(--color-panel);
   overflow-y: auto;
-  max-height: 600px;
+  max-height: 800px; /* увеличена максимальная высота */
 }
 
 .survey-create__title {
@@ -182,11 +182,11 @@ body {
 /* Правая колонка - превью */
 .survey-create__preview {
   flex: 1 1 45%;
-  background: linear-gradient(135deg, #232329 60%, #6366F1 100%);
+  background: linear-gradient(135deg, #232329 70%, #6366F1 200%);
   padding: 48px 40px;
   color: #fff;
   overflow-y: auto;
-  max-height: 600px;
+  max-height: 800px; /* увеличена максимальная высота */
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--color-input-border);

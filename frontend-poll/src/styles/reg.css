@@ -1,152 +1,174 @@
-/* Сброс и базовые стили */
-body, html {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: 'Inter', Arial, sans-serif;
-  background: var(--color-bg, #18181B);
-  overflow: hidden; /* отключаем скролл */
+:root {
+    --color-bg: #18181B;
+    --color-panel: #232329;
+    --color-primary: #FF2424;
+    --color-text: #fff;
+    --color-accent: #6366F1;
+    --color-divider: #393942;
+    --color-input-bg: #232329;
+    --color-input-border: #393942;
+    --color-placeholder: #8a8a93;
 }
 
-/* Фон с декоративными фигурами */
-.page {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: var(--color-bg, #18181B);
-  overflow: hidden;
-  z-index: 0;
+body {
+    margin: 0;
+    background: var(--color-bg);
+    font-family: 'Inter', Arial, sans-serif;
+    color: var(--color-text);
+    height: 100vh;
+    overflow: hidden;
 }
 
-/* Основные большие фигуры */
-.page::before,
-.page::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(140px);
-  opacity: 0.3;
-  z-index: -1;
+.auth-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+
+    box-sizing: border-box;
+
+    background: transparent; /* или полупрозрачный фон, если нужно */
+    z-index: 1;
 }
 
-.page::before {
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle at center, #6366F1, transparent 70%);
-  top: 5%;
-  left: 5%;
-}
-
-.page::after {
-  width: 800px;
-  height: 800px;
-  background: radial-gradient(circle at center, #FF2424, transparent 70%);
-  bottom: 10%;
-  right: 10%;
-}
-
-/* Дополнительные мелкие фигуры */
-.page::nth-child(3) {
-  content: "";
-  position: absolute;
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle at center, #22c55e, transparent 70%);
-  top: 40%;
-  right: 20%;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.25;
-  z-index: -1;
-}
-
-/* Центрируем окно регистрации */
 .auth {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 1100px; /* увеличена ширина */
-  max-width: 95vw;
-  min-height: 480px;
-  background: var(--color-panel, #232329);
-  border-radius: 24px;
-  box-shadow: 0 4px 32px rgba(0,0,0,0.45);
-  overflow: hidden;
-  display: flex;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  box-sizing: border-box;
-  padding: 0;
+    margin-top: 50px;
+    background: var(--color-panel);
+    border-radius: 24px;
+    padding: 48px 32px;
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.45);
+
+    max-width: 1500px;
+    width: 100%;
+
+    max-height: 90vh; /* чтобы окно не выходило за экран */
+    overflow-y: auto;
+
+    box-sizing: border-box;
+    position: relative;
+    z-index: 2;
 }
 
-/* Левая часть с формой */
 .auth__container {
-  flex: 1 1 50%;
-  padding: 48px 60px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  background: var(--color-panel, #232329);
-  box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
-/* Заголовок */
 .auth__title {
-  font-size: 2.4rem;
-  font-weight: 700;
-  margin-bottom: 32px;
-  letter-spacing: 0.5px;
-  text-align: center;
-  color: var(--color-text, #fff);
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 24px 0;
+    text-align: center;
 }
 
-/* Правая часть с информацией */
+.auth__form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.auth__field {
+    display: flex;
+    flex-direction: column;
+}
+
+.auth__label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    opacity: 0.85;
+}
+
+.auth__input {
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-input-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    color: var(--color-text);
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: 'Inter', Arial, sans-serif;
+}
+
+.auth__input::placeholder {
+    color: var(--color-placeholder);
+}
+
+.auth__input:focus {
+    border-color: var(--color-accent);
+}
+
+.auth__button {
+    margin-top: 12px;
+    padding: 14px 0;
+    background: var(--color-accent);
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.auth__button:hover {
+    background: #4f52d1;
+}
+
+.auth__divider {
+    text-align: center;
+    margin: 24px 0;
+    color: var(--color-placeholder);
+    font-weight: 600;
+}
+
+.auth__social {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+.auth__social-btn {
+    flex: 1;
+    padding: 12px 0;
+    border-radius: 12px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    color: #fff;
+    transition: background 0.2s;
+}
+
+.auth__social-btn--google {
+    background: #DB4437;
+}
+
+.auth__social-btn--google:hover {
+    background: #c33c2f;
+}
+
+.auth__social-btn--GitHub {
+    background: #333;
+}
+
+.auth__social-btn--GitHub:hover {
+    background: #222;
+}
+
 .auth__side {
-  flex: 1 1 50%;
-  background: linear-gradient(135deg, #232329 60%, #6366F1 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  box-sizing: border-box;
-}
-
-.auth__side-content {
-  padding: 36px 24px;
-  border-radius: 16px;
-  background: rgba(24, 24, 27, 0.85);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
-  max-width: 360px;
+    margin-top: 24px;
+    text-align: center;
+    opacity: 0.8;
 }
 
 .auth__side-text {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #fff;
-  text-align: center;
-}
-
-/* Адаптивность */
-@media (max-width: 1200px) {
-  .auth {
-    width: 95vw;
-    flex-direction: column;
-    min-height: auto;
-  }
-
-  .auth__container,
-  .auth__side {
-    flex: none;
-    width: 100%;
-    padding: 32px 24px;
-  }
-
-  .auth__side-content {
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 600px) {
-  .auth__title {
-    font-size: 2rem;
-  }
+    font-size: 1rem;
+    font-weight: 500;
 }
