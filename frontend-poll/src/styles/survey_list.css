@@ -1,69 +1,83 @@
+html, body {
+    overflow: auto !important;
+    height: auto !important;
+}
+
 .survey-list {
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 0 20px;
-  font-family: 'Inter', Arial, sans-serif;
-  color: #fff;
-  background: var(--color-panel, #232329);
-  border-radius: 24px;
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.45);
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 20px;
+    font-family: 'Inter', Arial, sans-serif;
+    color: #fff;
+    background: var(--color-panel, #232329);
+    border-radius: 24px;
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.45);
 }
 
 .survey-list__title {
-  font-size: 2.2rem;
-  font-weight: 700;
-  margin: 24px 0;
-  text-align: center;
-  color: var(--color-text, #fff);
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 24px 0;
+    text-align: center;
+    color: var(--color-text, #fff);
 }
 
 .survey-list__items {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .survey-list__item {
-  padding: 20px;
-  border-bottom: 1px solid var(--color-divider, #393942);
-  cursor: pointer;
-  outline: none;
-  color: #fff;
-  background-color: #232329;
-  margin-bottom: 8px;
-  border-radius: 8px;
+    padding: 20px;
+    border-bottom: 1px solid var(--color-divider, #393942);
+    cursor: pointer;
+    outline: none;
+    color: #fff;
+    background-color: #232329;
+    margin-bottom: 8px;
+    border-radius: 8px;
 
-  /* Плавная анимация */
-  transition: background-color 0.3s ease, transform 0.1s ease;
-  user-select: none;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    user-select: none;
 }
 
 .survey-list__item:last-child {
-  border-bottom: none;
+    border-bottom: none;
 }
 
-/* Hover и focus эффекты */
 .survey-list__item:hover,
 .survey-list__item:focus {
-  background: var(--color-accent, #6366F1);
-  outline: none;
-  transform: scale(1.02);
+    background: var(--color-accent, #6366F1);
+    outline: none;
+    transform: scale(1.02);
 }
 
-/* Эффект нажатия */
 .survey-list__item:active {
-  transform: scale(0.98);
-  transition: transform 0.05s ease;
+    transform: scale(0.98);
+    transition: transform 0.05s ease;
 }
 
 .survey-list__item-title {
-  margin: 0 0 8px 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    font-weight: 600;
 }
 
 .survey-list__item-description {
-  margin: 0;
-  opacity: 0.85;
-  font-size: 1rem;
+    margin: 0 0 12px 0;
+    opacity: 0.85;
+    font-size: 1rem;
+}
+
+.survey-list__meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--color-placeholder, #8a8a93);
+}
+
+.survey-list__author,
+.survey-list__date {
+    user-select: none;
 }

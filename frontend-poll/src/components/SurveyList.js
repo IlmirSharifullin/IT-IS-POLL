@@ -1,35 +1,47 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useContext} from 'react';
 import {useNavigate} from 'react-router-dom';
+import {AuthContext} from '../context/AuthContext';
 import '../styles/survey_list.css';
 
+function formatDate(dateString) {
+    const options = {year: 'numeric', month: 'long', day: 'numeric'};
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', options);
+}
+
 function SurveyList() {
+    const {token} = useContext(AuthContext);
     const [surveys, setSurveys] = useState([]);
+    const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
-        async function fetchSurveys() {
+        async function fetchData() {
             try {
-                const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwMjU5NjQ2LCJpYXQiOjE3NDc1ODEyNDYsImp0aSI6Ijk3MGQyNzkxOTY1MTRmOWRhZjdiNzU4ZDllYWMyMWVhIiwidXNlcl9pZCI6MX0.p-JNeKgSq7umjB1lm3A30FaUzExTDCQ6HDYp0Hgi9FA";
-                if (!token) {
-                    throw new Error('Пользователь не авторизован');
-                }
+                if (!token) throw new Error('Пользователь не авторизован');
 
-                const response = await fetch('http://127.0.0.1:8000/api/v1/polls/', {
+                const usersRes = await fetch('http://127.0.0.1:8000/api/v1/users/', {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`,
                     },
                 });
+                if (!usersRes.ok) throw new Error('Ошибка загрузки пользователей');
+                const usersData = await usersRes.json();
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || 'Ошибка загрузки списка опросов');
-                }
+                const surveysRes = await fetch('http://127.0.0.1:8000/api/v1/polls/', {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+                if (!surveysRes.ok) throw new Error('Ошибка загрузки опросов');
+                const surveysData = await surveysRes.json();
 
-                const data = await response.json();
-                setSurveys(data.results || []);
+                setUsers(usersData.results || []);
+                setSurveys(surveysData.results || []);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -37,8 +49,13 @@ function SurveyList() {
             }
         }
 
-        fetchSurveys();
-    }, []);
+        fetchData();
+    }, [token]);
+
+    const getUsernameById = (id) => {
+        const user = users.find(u => u.id === id);
+        return user ? user.username : `id${id}`;
+    };
 
     if (loading) return <p>Загрузка опросов...</p>;
     if (error) return <p style={{color: 'red'}}>Ошибка: {error}</p>;
@@ -47,8 +64,7 @@ function SurveyList() {
     return (
         <main className="survey-list" role="main" aria-label="Список опросов" style={{padding: '20px'}}>
             <h1 className="survey-list__title">Доступные опросы</h1>
-
-            <ul className="survey-list__items" style={{listStyle: 'none', padding: 0}}>
+            <ul className="survey-list__items">
                 {surveys.map((survey) => (
                     <li
                         key={survey.id}
@@ -62,6 +78,10 @@ function SurveyList() {
                     >
                         <h2 className="survey-list__item-title">{survey.title}</h2>
                         <p className="survey-list__item-description">{survey.description}</p>
+                        <div className="survey-list__meta">
+                            <span className="survey-list__author">Автор: {getUsernameById(survey.author_id)}</span>
+                            <span className="survey-list__date">Создан: {formatDate(survey.created_at)}</span>
+                        </div>
                     </li>
                 ))}
             </ul>
