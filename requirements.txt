@@ -13,12 +13,13 @@ djangorestframework_simplejwt==5.5.0
 djoser==2.2.0
 dnspython==2.7.0
 drf-yasg==1.21.10
+django-filter==23.5
 idna==3.10
 inflection==0.5.1
 mongoengine==0.29.1
 oauthlib==3.2.2
 packaging==25.0
-pillow==11.1.0
+Pillow==10.3.0
 psycopg==3.2.6
 pycparser==2.22
 PyJWT==2.9.0
@@ -36,3 +37,5 @@ sqlparse==0.5.3
 typing_extensions==4.13.2
 uritemplate==4.1.1
 urllib3==2.4.0
+matplotlib==3.8.4
+wordcloud==1.9.3

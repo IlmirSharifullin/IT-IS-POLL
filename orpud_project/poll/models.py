@@ -31,6 +31,7 @@ class DateTimeDocument(Document):
 
 
 class Question(DateTimeDocument):
+    author_id = IntField(required=True)
     type = StringField(required=True)
     question = StringField(required=True)
     options = ListField(StringField())
@@ -41,10 +42,11 @@ class Poll(DateTimeDocument):
     title = StringField(max_length=200)
     description = StringField(max_length=200)
     questions = ListField(ReferenceField(Question))
+    tags = ListField(StringField(max_length=50), default=list)
 
 
 class Answer(DateTimeDocument):
-    answerer_id = IntField(required=True)
+    author_id = IntField(required=True)
     poll = ReferenceField(Poll)
     question = ReferenceField(Question)
     answers = DynamicField(required=True)

@@ -15,8 +15,8 @@ from django.urls import path, re_path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/v1/", include("poll.urls")),
-    path("api/v1/", include("news.urls")),
+    path("api/v1/", include("poll.urls")), # Опросы
+    path("api/v1/", include("news.urls")), # Новости
     path("api/v1/", include("djoser.urls")),  # Работа с пользователями
     path("api/v1/", include("djoser.urls.jwt")),  # Работа с токенами
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

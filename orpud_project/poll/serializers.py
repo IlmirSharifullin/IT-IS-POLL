@@ -1,7 +1,9 @@
-from rest_framework import serializers
-from .models import Poll, Question, Answer
 from bson import ObjectId
 import datetime
+
+from rest_framework import serializers
+
+from .models import Poll, Question, Answer
 
 
 class ObjectIdField(serializers.Field):
@@ -54,18 +56,27 @@ class PollSerializer(BaseDocumentSerializer):
     description = serializers.CharField(max_length=200, required=False)
     questions = QuestionSerializer(many=True)
     author_id = serializers.IntegerField(read_only=True)
+    tags = serializers.ListField(
+        child=serializers.CharField(max_length=50),
+        required=False,
+        default=list,
+        allow_empty=True,
+    )
 
     def create(self, validated_data):
         request = self.context.get("request")
         questions_data = validated_data.pop("questions")
+        tags = validated_data.pop("tags", [])
 
         poll = Poll.objects.create(
             title=validated_data["title"],
             description=validated_data.get("description", ""),
             author_id=request.user.id if request else None,
+            tags=tags,
         )
 
         for question_data in questions_data:
+            question_data["author_id"] = request.user.id
             question = Question.objects.create(**question_data)
             poll.questions.append(question)
 
@@ -76,6 +87,8 @@ class PollSerializer(BaseDocumentSerializer):
         instance = super().update(instance, validated_data)
         instance.title = validated_data.get("title", instance.title)
         instance.description = validated_data.get("description", instance.description)
+        if "tags" in validated_data:
+            instance.tags = validated_data["tags"]
 
         if "questions" in validated_data:
             for question in instance.questions:
@@ -94,6 +107,12 @@ class AnswerSerializer(BaseDocumentSerializer):
     question = ObjectIdField(required=True)
     answers = serializers.JSONField(required=True)
     poll = ObjectIdField(required=True)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["question"] = str(instance.question.id)
+        data["poll"] = str(instance.poll.id)
+        return data
 
     def validate(self, data):
         question = Question.objects.get(id=data["question"])
@@ -117,6 +136,6 @@ class AnswerSerializer(BaseDocumentSerializer):
         return Answer.objects.create(
             question=Question.objects.get(id=validated_data["question"]),
             poll=Poll.objects.get(id=validated_data["poll"]),
-            answerer_id=self.context["request"].user.id,
+            author_id=self.context["request"].user.id,
             answers=validated_data["answers"],
         )
