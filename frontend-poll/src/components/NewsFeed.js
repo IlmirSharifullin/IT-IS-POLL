@@ -116,7 +116,7 @@ function NewsFeed() {
                 });
                 if (!res.ok) throw new Error('Ошибка загрузки пользователей');
                 const data = await res.json();
-                setUsers(data.results || []);
+                setUsers(Array.isArray(data) ? data : (data.results || []));
             } catch {
                 setUsers([]);
             }
@@ -132,7 +132,7 @@ function NewsFeed() {
                 });
                 if (!res.ok) throw new Error('Ошибка загрузки новостей');
                 const data = await res.json();
-                setNewsList(data.results || []);
+                setNewsList(Array.isArray(data) ? data : (data.results || []));
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -156,8 +156,9 @@ function NewsFeed() {
                     });
                     if (!res.ok) continue;
                     const data = await res.json();
-                    const likeCount = data.results.filter(r => r.is_like).length;
-                    const userLike = data.results.find(r => r.author === user.id && r.is_like);
+                    const reactions = Array.isArray(data) ? data : (data.results || []);
+                    const likeCount = reactions.filter(r => r.is_like).length;
+                    const userLike = reactions.find(r => r.author === user.id && r.is_like);
                     if (userLike) {
                         newLikes[news.id] = {liked: true, reactionId: userLike.id, count: likeCount};
                     } else {
@@ -231,7 +232,6 @@ function NewsFeed() {
         setCommentTexts(prev => ({...prev, [newsId]: text}));
     };
 
-    // Добавляем функцию для обновления комментариев локально
     const addCommentToList = useCallback(
         (newsId, newComment) => {
             setNewsList(prevNewsList =>
@@ -262,12 +262,18 @@ function NewsFeed() {
                 <h1>Новости</h1>
 
                 {newsList.length === 0 && <p>Новостей пока нет.</p>}
-
                 {newsList.map(news => (
                     <article key={news.id} className="news-item" aria-label={`Новость: ${news.title}`}>
                         <h2>{news.title}</h2>
                         <p className="text">{news.text}</p>
                         {news.image && <img src={news.image} alt={news.title}/>}
+                        {news.tags && news.tags.length > 0 && (
+                            <div className="news-tags">
+                                {news.tags.map((tag, index) => (
+                                    <span key={index} className="news-tag">{tag}</span>
+                                ))}
+                            </div>
+                        )}
 
                         <div style={{display: 'flex', alignItems: 'center', gap: '16px', marginBottom: 10}}>
                             <button
@@ -315,6 +321,18 @@ function NewsFeed() {
           transform: translate(-50%, -50%);
           transition: background 0.3s;
         }
+        .news-tags {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+        .news-tag {
+          background-color: var(--color-accent, #6366F1);
+          color: var(--color-bg, #fff);
+          padding: 4px 8px;
+          border-radius: 6px;
+          font-size: 0.8rem;
+        }
       `}</style>
         </>
     );
@@ -341,7 +359,7 @@ function Comments({
                 const res = await fetch(`http://127.0.0.1:8000/api/v1/news/${newsId}/comments/`);
                 if (!res.ok) throw new Error('Ошибка загрузки комментариев');
                 const data = await res.json();
-                setComments(Array.isArray(data.results) ? data.results : []);
+                setComments(Array.isArray(data) ? data : (data.results || []));
             } catch {
                 setComments([]);
             } finally {
@@ -378,7 +396,6 @@ function Comments({
                 throw new Error(errData.detail || 'Ошибка при отправке комментария');
             }
             const newComment = await res.json();
-            // Добавляем новый комментарий локально
             setComments(prev => [...prev, newComment]);
             addCommentToList(newsId, newComment);
             onCommentChange(newsId, '');
@@ -390,7 +407,23 @@ function Comments({
     };
 
     if (loadingComments) return <p>Загрузка комментариев...</p>;
-    if (!comments.length) return <p>Комментариев пока нет.</p>;
+    if (!comments.length) return (
+        <>
+            <p>Комментариев пока нет.</p>
+            <form onSubmit={handleSubmit} className="comment-form">
+        <textarea
+            value={commentTexts[newsId] || ''}
+            onChange={e => onCommentChange(newsId, e.target.value)}
+            rows={3}
+            placeholder="Оставьте комментарий"
+            required
+        />
+                <button type="submit" disabled={submittingComment[newsId]}>
+                    {submittingComment[newsId] ? 'Отправка...' : 'Отправить'}
+                </button>
+            </form>
+        </>
+    );
 
     return (
         <>

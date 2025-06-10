@@ -128,7 +128,7 @@ function SurveyList() {
                 const surveysData = await surveysRes.json();
 
                 setUsers(usersData.results || []);
-                setSurveys(surveysData.results || []);
+                setSurveys(surveysData || []); // исправлено: данные - массив, без .results
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -172,6 +172,13 @@ function SurveyList() {
                         >
                             <h2 className="survey-list__item-title">{survey.title}</h2>
                             <p className="survey-list__item-description">{survey.description}</p>
+
+                            {survey.tags && survey.tags.length > 0 && (
+                                <p className="survey-list__item-tags">
+                                    Теги: {survey.tags.join(', ')}
+                                </p>
+                            )}
+
                             <div className="survey-list__meta">
                                 <span className="survey-list__author">Автор: {getUsernameById(survey.author_id)}</span>
                                 <span className="survey-list__date">Создан: {formatDate(survey.created_at)}</span>
@@ -197,6 +204,12 @@ function SurveyList() {
           border-radius: 50%;
           transform: translate(-50%, -50%);
           transition: background 0.3s;
+        }
+        .survey-list__item-tags {
+          margin: 8px 0;
+          font-size: 0.9rem;
+          color: #9ca3af;
+          font-style: italic;
         }
       `}</style>
         </>

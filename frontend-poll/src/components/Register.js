@@ -1,13 +1,17 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState} from 'react';
 import '../styles/reg.css';
 
 const NUM_SHAPES = 5;
 
+const CIS_COUNTRIES = [
+    'Россия', 'Беларусь', 'Украина', 'Казахстан', 'Армения',
+    'Азербайджан', 'Молдова', 'Киргизия', 'Таджикистан', 'Узбекистан', 'Туркменистан'
+];
+
 function BackgroundShapes() {
     const [shapes, setShapes] = useState([]);
 
-    // Инициализация фигур
-    useEffect(() => {
+    React.useEffect(() => {
         const initialShapes = [];
         for (let i = 0; i < NUM_SHAPES; i++) {
             initialShapes.push({
@@ -17,8 +21,8 @@ function BackgroundShapes() {
                 left: Math.random() * 80 + 10,
                 directionX: Math.random() > 0.5 ? 1 : -1,
                 directionY: Math.random() > 0.5 ? 1 : -1,
-                speedX: 0.02 + Math.random() * 0.03, // медленная скорость
-                speedY: 0.01 + Math.random() * 0.02, // медленная скорость
+                speedX: 0.02 + Math.random() * 0.03,
+                speedY: 0.01 + Math.random() * 0.02,
                 blur: 80 + Math.random() * 40,
                 color: i % 2 === 0 ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255, 36, 36, 0.3)',
             });
@@ -26,8 +30,7 @@ function BackgroundShapes() {
         setShapes(initialShapes);
     }, []);
 
-    // Анимация движения фигур
-    useEffect(() => {
+    React.useEffect(() => {
         let animationFrameId;
 
         function animate() {
@@ -106,13 +109,14 @@ function BackgroundShapes() {
 }
 
 function Register() {
-    const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwMjU5NjQ2LCJpYXQiOjE3NDc1ODEyNDYsImp0aSI6Ijk3MGQyNzkxOTY1MTRmOWRhZjdiNzU4ZDllYWMyMWVhIiwidXNlcl9pZCI6MX0.p-JNeKgSq7umjB1lm3A30FaUzExTDCQ6HDYp0Hgi9FA';
-
     const [formData, setFormData] = useState({
         username: '',
         email: '',
         password: '',
         confirmPassword: '',
+        sex: '',
+        birthdate: '',
+        country: '',
     });
 
     const [error, setError] = useState(null);
@@ -129,7 +133,9 @@ function Register() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.username.trim() || !formData.email.trim() || !formData.password) {
+        // Валидация
+        if (!formData.username.trim() || !formData.email.trim() || !formData.password ||
+            !formData.sex || !formData.birthdate || !formData.country) {
             setError('Пожалуйста, заполните все обязательные поля');
             setSuccess(null);
             return;
@@ -149,12 +155,14 @@ function Register() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${TOKEN}`,
                 },
                 body: JSON.stringify({
                     username: formData.username,
                     email: formData.email,
                     password: formData.password,
+                    sex: formData.sex,
+                    birthdate: formData.birthdate,
+                    country: formData.country,
                 }),
             });
 
@@ -170,6 +178,9 @@ function Register() {
                 email: '',
                 password: '',
                 confirmPassword: '',
+                sex: '',
+                birthdate: '',
+                country: '',
             });
         } catch (err) {
             setError(err.message);
@@ -237,28 +248,63 @@ function Register() {
                                 />
                             </div>
 
+                            <div className="auth__field">
+                                <label className="auth__label" htmlFor="sex">Пол</label>
+                                <select
+                                    className="auth__input"
+                                    id="sex"
+                                    name="sex"
+                                    required
+                                    value={formData.sex}
+                                    onChange={handleChange}
+                                >
+                                    <option value="">Выберите пол</option>
+                                    <option value="m">Мужской</option>
+                                    <option value="f">Женский</option>
+                                </select>
+                            </div>
+
+                            <div className="auth__field">
+                                <label className="auth__label" htmlFor="birthdate">Дата рождения</label>
+                                <input
+                                    className="auth__input"
+                                    type="date"
+                                    id="birthdate"
+                                    name="birthdate"
+                                    required
+                                    value={formData.birthdate}
+                                    onChange={handleChange}
+                                />
+                            </div>
+
+                            <div className="auth__field">
+                                <label className="auth__label" htmlFor="country">Страна</label>
+                                <select
+                                    className="auth__input"
+                                    id="country"
+                                    name="country"
+                                    required
+                                    value={formData.country}
+                                    onChange={handleChange}
+                                >
+                                    <option value="">Выберите страну</option>
+                                    {CIS_COUNTRIES.map(country => (
+                                        <option key={country} value={country}>{country}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             {error && <div style={{color: 'red', marginBottom: '10px'}}>{error}</div>}
                             {success && <div style={{color: 'green', marginBottom: '10px'}}>{success}</div>}
 
                             <button className="auth__button" type="submit">Зарегистрироваться</button>
                         </form>
 
-                        <div className="auth__divider">или</div>
-
-                        <div className="auth__social">
-                            <button className="auth__social-btn auth__social-btn--google" type="button">
-                                Зарегистрироваться через Google
-                            </button>
-                            <button className="auth__social-btn auth__social-btn--GitHub" type="button">
-                                Зарегистрироваться через GitHub
-                            </button>
-                        </div>
                     </div>
-
                     <div className="auth__side">
                         <div className="auth__side-content">
                             <p className="auth__side-text">
-                                Присоединяйтесь к нам - создавайте и проходите опросы легко!
+                                Присоединяйтесь к нам — создавайте и проходите опросы легко!
                             </p>
                         </div>
                     </div>
