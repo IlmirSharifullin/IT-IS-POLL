@@ -1,6 +1,8 @@
 from bson import ObjectId
 import datetime
 from io import BytesIO
+from collections import Counter
+import base64
 
 from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
@@ -14,6 +16,7 @@ from mongoengine.queryset import Q
 from .models import Poll, Question, Answer
 from .serializers import PollSerializer, QuestionSerializer, AnswerSerializer
 from .permissions import OwnerOrReadOnly, ReadOnly
+from .utils import get_age_distribution, get_word_frequency, generate_word_cloud
 
 
 class PollViewSet(viewsets.ViewSet):
@@ -215,59 +218,57 @@ class AnswerViewSet(viewsets.ViewSet):
 @api_view(["GET"])
 def get_poll_statistic(request, poll_pk):
     try:
-        # Получаем опрос по ID
-        poll_id = ObjectId(poll_pk)
-        poll = Poll.objects.get(id=poll_id)
-
-        # Получаем все ответы для этого опроса
+        poll = Poll.objects.get(id=ObjectId(poll_pk))
         answers = Answer.objects.filter(poll=poll)
-
-        # Получаем общее количество ответивших
-        total_answers = answers.count()
-
-        # Получаем список ID пользователей, которые ответили на опрос
+        
+        # Получаем ID пользователей (аналог values_list с flat=True)
         answerer_ids = list(set([answer.author_id for answer in answers]))
-
-        # Получаем информацию о пользователях из Django модели User
+        
+        # Получаем информацию о пользователях
         User = get_user_model()
         users = User.objects.filter(id__in=answerer_ids)
-
+        
         # Статистика по странам
-        countries = users.values_list("country", flat=True)
         country_stats = {}
-        for country in countries:
+        for user in users:
+            country = user.country
             country_stats[country] = country_stats.get(country, 0) + 1
-
+        
+        # Преобразуем в формат для графика
+        country_data = [{"name": k, "value": v} for k, v in country_stats.items()]
+        
         # Статистика по возрасту
         ages = []
         for user in users:
-            age = (datetime.date.today() - user.birthdate).days // 365
-            ages.append(age)
-
-        # Статистика (соотношение) по полу
-        genders = users.values_list("sex", flat=True)
+            if user.birthdate:
+                age = (datetime.date.today() - user.birthdate).days // 365
+                ages.append(age)
+        
+        # Статистика по полу
         gender_stats = {
-            "male": len([g for g in genders if g == "М"]),
-            "female": len([g for g in genders if g == "Ж"]),
+            "male": len([u for u in users if u.sex == "М"]),
+            "female": len([u for u in users if u.sex == "Ж"])
         }
-
-        # Ответ
-        response_data = {
-            "poll_id": str(poll.id),
-            "poll_title": poll.title,
-            "total_respondents": total_answers,
-            "answerer_ids": answerer_ids,
-            "countries": country_stats,
-            "age_statistics": {
-                "min": min(ages) if ages else None,
-                "max": max(ages) if ages else None,
-                "average": sum(ages) / len(ages) if ages else None,
+        
+        return Response({
+            "poll": {
+                "id": str(poll.id),
+                "title": poll.title,
+                "total_answers": answers.count(),
+                "total_respondents": len(answerer_ids)
             },
-            "gender_statistics": gender_stats,
-        }
-
-        return Response(response_data)
-
+            "demographics": {
+                "countries": sorted(country_data, key=lambda x: -x["value"]),
+                "age": {
+                    "min": min(ages) if ages else None,
+                    "max": max(ages) if ages else None,
+                    "average": round(sum(ages)/len(ages), 2) if ages else None,
+                    "distribution": get_age_distribution(ages)
+                },
+                "gender": gender_stats
+            }
+        })
+    
     except Poll.DoesNotExist:
         raise NotFound("Poll not found")
     except Exception as e:
@@ -277,76 +278,53 @@ def get_poll_statistic(request, poll_pk):
 @api_view(["GET"])
 def get_question_statistic(request, question_pk):
     try:
-        question_id = ObjectId(question_pk)
-
-        question = Question.objects.get(id=question_id)
-
-        # Круговая диаграмма
+        question = Question.objects.get(id=ObjectId(question_pk))
+        answers = Answer.objects.filter(question=question)
+        
         if question.type == "radio":
-            question_answers = {}
-            for choice in question.options:
-                question_answers[choice] = Answer.objects.filter(
-                    question=question_id, answers=choice
-                ).count()
-            return Response({"answers_count": question_answers})
-        # Для вопросов с множественным выбором (checkbox)
+            stats = []
+            for option in question.options:
+                count = len([a for a in answers if a.answers == option])
+                stats.append({"name": option, "value": count})
+            
+            return Response({
+                "type": "single_choice",
+                "question": question.question,
+                "total_answers": answers.count(),
+                "options": stats
+            })
+            
         elif question.type == "checkbox":
-            question_answers = {}
-            for choice in question.options:
-                # Ищем ответы, где выбран текущий вариант
-                count = Answer.objects.filter(
-                    question=question_id,
-                    answers__contains=choice,  # Используем contains для поиска в массиве
-                ).count()
-                question_answers[choice] = count
-            return Response({"answers_count": question_answers})
-        # Облако слов
+            stats = []
+            for option in question.options:
+                count = len([a for a in answers if option in a.answers])
+                stats.append({"name": option, "count": count})
+            
+            return Response({
+                "type": "multiple_choice",
+                "question": question.question,
+                "total_answers": answers.count(),
+                "options": sorted(stats, key=lambda x: -x["count"])
+            })
+            
         elif question.type == "text":
-            text_answers = Answer.objects.filter(question=question_id).values_list(
-                "answers", flat=True
-            )
-
-            # Объединяем все ответы в один текст
-            all_text = " ".join(text_answers)
-
-            wordcloud = WordCloud(
-                width=800,
-                height=400,
-                background_color="white",
-                stopwords=None,
-                min_font_size=10,
-            ).generate(all_text)
-
-            # Сохраняем облако слов в байты
-            plt.figure(figsize=(8, 4), facecolor=None)
-            plt.imshow(wordcloud)
-            plt.axis("off")
-            plt.tight_layout(pad=0)
-
-            img_buffer = BytesIO()
-            plt.savefig(img_buffer, format="png")
-            plt.close()
-
-            img_buffer.seek(0)
-            img_bytes = img_buffer.getvalue()
-            img_base64 = base64.b64encode(img_bytes).decode("utf-8")
-
-            return Response(
-                {
-                    "type": "text",
-                    "question": question.question,
-                    "wordcloud": f"data:image/png;base64,{img_base64}",
-                    "total_answers": len(text_answers),
-                }
-            )
-
-        else:
-            return Response(
-                {"error": "Unsupported question type"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
+            text_answers = [a.answers for a in answers]
+            word_freq = get_word_frequency(" ".join(text_answers))
+            
+            return Response({
+                "type": "text",
+                "question": question.question,
+                "total_answers": len(text_answers),
+                "word_cloud": generate_word_cloud(word_freq),
+                "top_words": word_freq[:20]
+            })
+            
+        return Response(
+            {"error": "Unsupported question type"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
     except Question.DoesNotExist:
-        raise NotFound("Poll not found")
+        raise NotFound("Question not found")
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
