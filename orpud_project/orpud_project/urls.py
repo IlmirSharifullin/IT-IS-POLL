@@ -15,8 +15,8 @@ from django.urls import path, re_path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/v1/", include("poll.urls")), # Опросы
-    path("api/v1/", include("news.urls")), # Новости
+    path("api/v1/", include("poll.urls")),  # Опросы
+    path("api/v1/", include("news.urls")),  # Новости
     path("api/v1/", include("djoser.urls")),  # Работа с пользователями
     path("api/v1/", include("djoser.urls.jwt")),  # Работа с токенами
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
@@ -47,6 +47,3 @@ urlpatterns += [
     ),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
-
-# handler404 = "pages.views.page_not_found"
-# handler500 = "pages.views.server_error"

@@ -57,7 +57,6 @@ INSTALLED_APPS = [
     'django_filters',
     "corsheaders",
     "djoser",
-    "pages.apps.PagesConfig",
     "poll.apps.PollConfig",
     "news.apps.NewsConfig",
 ]
@@ -161,8 +160,6 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CSRF_FAILURE_VIEW = "pages.views.csrf_failure"
-
 MEDIA_URL = "/media/"
 
 MEDIA_ROOT = BASE_DIR / "media"
@@ -190,7 +187,7 @@ REST_FRAMEWORK = {
         "anon": "10000/day",  # Лимит для AnonRateThrottle
     },
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10,
+    "PAGE_SIZE": 8,
 }
 
 SIMPLE_JWT = {
