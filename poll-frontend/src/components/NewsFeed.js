@@ -133,61 +133,70 @@ function NewsFeed() {
         tags: [],
     });
     const [creating, setCreating] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [selectedTag, setSelectedTag] = useState('');
+
+    console.log('Current user data:', user);
+
+    // Функция для получения полного URL изображения
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return null;
+        // Если это уже полный URL (включая base64), возвращаем как есть
+        if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
+            return imagePath;
+        }
+        // Иначе добавляем базовый URL сервера
+        return `http://127.0.0.1:8000${imagePath}`;
+    };
 
     useEffect(() => {
-        async function fetchUsers() {
+        async function fetchData() {
             try {
-                const res = await fetch('http://127.0.0.1:8000/api/v1/users/', {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(token ? {Authorization: `Bearer ${token}`} : {}),
-                    },
-                });
-                if (!res.ok) throw new Error('Ошибка загрузки пользователей');
-                const data = await res.json();
-                setUsers(Array.isArray(data) ? data : (data.results || []));
-            } catch {
-                setUsers([]);
-            }
-        }
+                const [newsRes, usersRes, tagsRes] = await Promise.all([
+                    fetch(`http://127.0.0.1:8000/api/v1/news/?page=${currentPage}${selectedTag ? `&tags__title=${selectedTag}` : ''}`, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(token ? {Authorization: `Bearer ${token}`} : {}),
+                        },
+                    }),
+                    fetch('http://127.0.0.1:8000/api/v1/users/', {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(token ? {Authorization: `Bearer ${token}`} : {}),
+                        },
+                    }),
+                    fetch('http://127.0.0.1:8000/api/v1/news/tags/', {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(token ? {Authorization: `Bearer ${token}`} : {}),
+                        },
+                    })
+                ]);
 
-        async function fetchNews() {
-            try {
-                const res = await fetch('http://127.0.0.1:8000/api/v1/news/', {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(token ? {Authorization: `Bearer ${token}`} : {}),
-                    },
-                });
-                if (!res.ok) throw new Error('Ошибка загрузки новостей');
-                const data = await res.json();
-                setNewsList(Array.isArray(data) ? data : (data.results || []));
+                if (!newsRes.ok) throw new Error('Ошибка загрузки новостей');
+                if (!usersRes.ok) throw new Error('Ошибка загрузки пользователей');
+                if (!tagsRes.ok) throw new Error('Ошибка загрузки тегов');
+
+                const [newsData, usersData, tagsData] = await Promise.all([
+                    newsRes.json(),
+                    usersRes.json(),
+                    tagsRes.json()
+                ]);
+
+                setNewsList(newsData.results || []);
+                setTotalPages(Math.ceil(newsData.count / 8));
+                setUsers(Array.isArray(usersData) ? usersData : (usersData.results || []));
+                setTagsList(Array.isArray(tagsData) ? tagsData : (tagsData.results || []));
+                setLoading(false);
             } catch (err) {
+                console.error('Error fetching data:', err);
                 setError(err.message);
-            } finally {
                 setLoading(false);
             }
         }
-
-        async function fetchTags() {
-            try {
-                const res = await fetch('http://127.0.0.1:8000/api/v1/tags/', {
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
-                if (!res.ok) throw new Error('Ошибка загрузки тегов');
-                const data = await res.json();
-                setTagsList(data);
-            } catch {
-                setTagsList([]);
-            }
-        }
-
-        fetchUsers();
-        fetchNews();
-        fetchTags();
-    }, [token]);
+        fetchData();
+    }, [token, currentPage, selectedTag]);
 
     useEffect(() => {
         if (!token || newsList.length === 0) return;
@@ -321,27 +330,93 @@ function NewsFeed() {
         }
         setCreating(true);
         try {
+            // Конвертируем изображение в base64 если оно есть
+            let imageBase64 = null;
+            if (newNewsData.image) {
+                console.log('Converting image to base64...');
+                const reader = new FileReader();
+                imageBase64 = await new Promise((resolve, reject) => {
+                    reader.onload = () => {
+                        console.log('Image converted successfully');
+                        const base64String = reader.result;
+                        // Отправляем полный формат data URL
+                        resolve(base64String);
+                    };
+                    reader.onerror = (error) => {
+                        console.error('Error converting image:', error);
+                        reject(error);
+                    };
+                    reader.readAsDataURL(newNewsData.image);
+                });
+            }
+
+            const newsData = {
+                title: newNewsData.title,
+                text: newNewsData.text,
+                image: imageBase64,
+                tags: newNewsData.tags
+            };
+
+            console.log('Sending news data:', {
+                ...newsData,
+                image: newsData.image ? 'data:image/...;base64,...' : null
+            });
+
             const res = await fetch('http://127.0.0.1:8000/api/v1/news/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(newNewsData),
+                body: JSON.stringify(newsData)
             });
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.detail || 'Ошибка при создании новости');
+
+            const responseData = await res.text();
+            console.log('Server response:', responseData);
+
+            let data;
+            try {
+                data = JSON.parse(responseData);
+            } catch (err) {
+                console.error('Error parsing response:', err);
+                throw new Error('Сервер вернул некорректный ответ');
             }
-            const createdNews = await res.json();
-            setNewsList(prev => [createdNews, ...prev]);
+
+            if (!res.ok) {
+                console.error('Server error:', data);
+                throw new Error(data.detail || 'Ошибка при создании новости');
+            }
+
+            // Обновляем список новостей, добавляя полный URL к изображению
+            const newsWithFullImageUrl = {
+                ...data,
+                image: data.image ? `http://127.0.0.1:8000${data.image}` : null
+            };
+            console.log('News with image URL:', newsWithFullImageUrl);
+            setNewsList(prev => [newsWithFullImageUrl, ...prev]);
             setShowCreateModal(false);
-            setNewNewsData({title: '', text: '', image: '', tags: []});
+            setNewNewsData({
+                title: '',
+                text: '',
+                image: '',
+                tags: []
+            });
         } catch (err) {
+            console.error('Creation error:', err);
             alert(err.message);
         } finally {
             setCreating(false);
         }
+    };
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+        window.scrollTo(0, 0);
+    };
+
+    const handleTagChange = (tag) => {
+        setSelectedTag(tag);
+        setCurrentPage(1);
     };
 
     if (loading) return <p>Загрузка новостей...</p>;
@@ -351,26 +426,87 @@ function NewsFeed() {
         <>
             <BackgroundShapes/>
             <main className="news-feed" style={{position: 'relative', zIndex: 1, padding: '20px'}}>
-                <button
-                    className="create-news-btn"
-                    onClick={() => setShowCreateModal(true)}
-                >
-                    Создать новость
-                </button>
+                {user?.is_staff && (
+                    <button
+                        className="create-news-btn"
+                        onClick={() => setShowCreateModal(true)}
+                    >
+                        Создать новость
+                    </button>
+                )}
 
                 <h1>Новости</h1>
 
+                <div className="tags-filter" style={{marginBottom: '20px'}}>
+                    <select 
+                        value={selectedTag} 
+                        onChange={(e) => handleTagChange(e.target.value)}
+                        className="select-styled"
+                        style={{
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            border: '1px solid #e0e0e0',
+                            backgroundColor: '#fff',
+                            fontSize: '16px',
+                            color: '#333',
+                            cursor: 'pointer',
+                            marginRight: '10px',
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        <option value="">Все теги</option>
+                        {tagsList.map(tag => (
+                            <option key={tag.id} value={tag.title}>
+                                {tag.title}
+                            </option>
+                        ))}
+                    </select>
+                    {selectedTag && (
+                        <button 
+                            onClick={() => handleTagChange('')}
+                            className="button-styled"
+                            style={{
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                backgroundColor: '#6c63ff',
+                                color: '#fff',
+                                fontSize: '16px',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                                ':hover': {
+                                    backgroundColor: '#5a52e0',
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
+                                }
+                            }}
+                        >
+                            Сбросить фильтр
+                        </button>
+                    )}
+                </div>
 
-                {newsList.length === 0 && <p>Новостей пока нет.</p>}
+                {loading && <p>Загрузка...</p>}
+                {error && <p className="error">Ошибка: {error}</p>}
+                {!loading && !error && newsList.length === 0 && <p>Новостей пока нет.</p>}
                 {newsList.map(news => (
                     <article key={news.id} className="news-item" aria-label={`Новость: ${news.title}`}>
                         <h2>{news.title}</h2>
                         <p className="text">{news.text}</p>
-                        {news.image && <img src={news.image} alt={news.title} className="news-image"/>}
+                        {news.image && <img src={getImageUrl(news.image)} alt={news.title} className="news-image"/>}
                         {news.tags && news.tags.length > 0 && (
                             <div className="news-tags">
                                 {news.tags.map((tag, index) => (
-                                    <span key={index} className="news-tag">{tag}</span>
+                                    <span 
+                                        key={index} 
+                                        className="news-tag" 
+                                        style={{cursor: 'pointer'}}
+                                        onClick={() => handleTagChange(tag)}
+                                    >
+                                        {tag}
+                                    </span>
                                 ))}
                             </div>
                         )}
@@ -403,6 +539,81 @@ function NewsFeed() {
                         </section>
                     </article>
                 ))}
+
+                {totalPages > 1 && (
+                    <div className="pagination" style={{
+                        marginTop: '20px',
+                        marginBottom: '20px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '10px',
+                        padding: '20px'
+                    }}>
+                        <button 
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="pagination-button"
+                            style={{
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                backgroundColor: currentPage === 1 ? '#e0e0e0' : '#6c63ff',
+                                color: currentPage === 1 ? '#666' : '#fff',
+                                fontSize: '16px',
+                                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                                opacity: currentPage === 1 ? 0.7 : 1
+                            }}
+                        >
+                            Назад
+                        </button>
+                        {[...Array(totalPages)].map((_, i) => (
+                            <button
+                                key={i + 1}
+                                onClick={() => handlePageChange(i + 1)}
+                                className="pagination-button"
+                                style={{
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    backgroundColor: currentPage === i + 1 ? '#6c63ff' : '#fff',
+                                    color: currentPage === i + 1 ? '#fff' : '#333',
+                                    fontSize: '16px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                                    ':hover': {
+                                        backgroundColor: currentPage === i + 1 ? '#5a52e0' : '#f5f5f5',
+                                        transform: 'translateY(-2px)',
+                                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
+                                    }
+                                }}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+                        <button 
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="pagination-button"
+                            style={{
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                backgroundColor: currentPage === totalPages ? '#e0e0e0' : '#6c63ff',
+                                color: currentPage === totalPages ? '#666' : '#fff',
+                                fontSize: '16px',
+                                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                                opacity: currentPage === totalPages ? 0.7 : 1
+                            }}
+                        >
+                            Вперед
+                        </button>
+                    </div>
+                )}
             </main>
 
             {showCreateModal && (
@@ -434,18 +645,21 @@ function NewsFeed() {
                                 />
                             </div>
 
-                            <div>
+                            <div className="form-group">
                                 <label htmlFor="image">Изображение:</label>
                                 <input
                                     type="file"
                                     id="image"
                                     name="image"
                                     accept="image/*"
-
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            setNewNewsData(prev => ({...prev, image: file}));
+                                        }
+                                    }}
                                 />
-
                             </div>
-
 
                             <div className="form-group">
                                 <label htmlFor="tags">Теги:</label>

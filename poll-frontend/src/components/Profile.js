@@ -12,6 +12,7 @@ import {
     Pie,
     Cell,
 } from "recharts";
+import {useNavigate} from 'react-router-dom';
 
 const NUM_SHAPES = 5;
 
@@ -144,6 +145,12 @@ function Modal({visible, onClose, children}) {
     );
 }
 
+function formatDate(dateString) {
+    const options = {year: 'numeric', month: 'long', day: 'numeric'};
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', options);
+}
+
 function Profile() {
     const {user, token} = useContext(AuthContext);
     const [createdSurveys, setCreatedSurveys] = useState([]);
@@ -154,6 +161,7 @@ function Profile() {
     const [loadingQuestionStats, setLoadingQuestionStats] = useState({});
     const [error, setError] = useState(null);
     const [activeQuestionId, setActiveQuestionId] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         async function fetchCreatedSurveys() {
@@ -163,7 +171,7 @@ function Profile() {
             setError(null);
             try {
                 const response = await fetch(
-                    `http://localhost:8000/api/v1/polls/?author_id=${user.id}`,
+                    `http://localhost:8000/api/v1/polls/?author=${user.id}`,
                     {
                         headers: {
                             "Content-Type": "application/json",
@@ -358,75 +366,48 @@ function Profile() {
             <BackgroundShapes/>
             <main className="profile-wrapper">
                 <section className="profile-container">
-                    <h1 className="profile-title">Профиль пользователя</h1>
+                    <h1 className="profile-title">Профиль</h1>
                     <p className="profile-nickname">
+                        Добро пожаловать,{' '}
                         <span className="profile-nickname--highlight">{user?.username}</span>
                     </p>
 
-                    {loadingSurveys && <p>Загрузка созданных опросов...</p>}
-                    {error && <p style={{color: "red"}}>Ошибка: {error}</p>}
-
-                    {!loadingSurveys && createdSurveys.length === 0 && (
-                        <p>Вы ещё не создали опросы.</p>
-                    )}
-
-                    {createdSurveys.length > 0 && (
+                    {loadingSurveys ? (
+                        <p>Загрузка опросов...</p>
+                    ) : error ? (
+                        <p style={{color: 'red'}}>{error}</p>
+                    ) : (
                         <>
-                            <h3>Созданные опросы:</h3>
-                            <ul className="survey-list">
-                                {createdSurveys.map((survey) => {
-                                    const stat = surveyStats[survey.id];
-                                    return (
+                            <h2>Созданные опросы</h2>
+                            {createdSurveys.length === 0 ? (
+                                <p>У вас пока нет созданных опросов</p>
+                            ) : (
+                                <ul className="survey-list">
+                                    {createdSurveys.map((survey) => (
                                         <li key={survey.id} className="survey-list__item">
-                                            <h4 className="survey-title">{survey.title}</h4>
-                                            {survey.description && (
-                                                <p className="survey-description">{survey.description}</p>
-                                            )}
-                                            <button
-                                                onClick={() => fetchSurveyStatistics(survey.id)}
-                                                disabled={loadingStatsIds[survey.id]}
-                                                className="btn-statistics"
+                                            <div 
+                                                className="survey-list__item-content"
+                                                onClick={() => navigate(`/survey/${survey.id}/details`)}
                                             >
-                                                {loadingStatsIds[survey.id]
-                                                    ? "Загрузка статистики..."
-                                                    : "Показать статистику опроса"}
-                                            </button>
-                                            {stat && (
-                                                <div className="survey-statistics">
-                                                    <p>Всего ответов: {stat.poll.total_answers}</p>
-                                                    <p>Всего респондентов: {stat.poll.total_respondents}</p>
-                                                    {renderDemographics(stat.demographics)}
-
-                                                    {stat.poll.questions && stat.poll.questions.length > 0 && (
-                                                        <div style={{marginTop: 20}}>
-                                                            <h5>Вопросы опроса:</h5>
-                                                            <ul>
-                                                                {stat.poll.questions.map((q) => (
-                                                                    <li key={q.id} style={{marginBottom: 10}}>
-                                                                        <span>{q.question}</span>
-                                                                        <button
-                                                                            className="btn-statistics"
-                                                                            style={{marginLeft: 10}}
-                                                                            onClick={() => {
-                                                                                console.log("Клик по вопросу", q.id);
-                                                                                fetchQuestionStatistics(q.id);
-                                                                            }}
-                                                                            disabled={loadingQuestionStats[q.id]}
-                                                                        >
-                                                                            {loadingQuestionStats[q.id] ? "Загрузка..." : "Показать статистику вопроса"}
-                                                                        </button>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    )}
+                                                <h3 className="survey-title">{survey.title}</h3>
+                                                {survey.description && (
+                                                    <p className="survey-description">{survey.description}</p>
+                                                )}
+                                                {survey.tags && survey.tags.length > 0 && (
+                                                    <p className="survey-tags">
+                                                        Теги: {survey.tags.join(', ')}
+                                                    </p>
+                                                )}
+                                                <div className="survey-meta">
+                                                    <span className="survey-date">
+                                                        Создан: {formatDate(survey.created_at)}
+                                                    </span>
                                                 </div>
-
-                                            )}
+                                            </div>
                                         </li>
-                                    );
-                                })}
-                            </ul>
+                                    ))}
+                                </ul>
+                            )}
                         </>
                     )}
                 </section>
@@ -444,8 +425,11 @@ function Profile() {
           position: relative;
           z-index: 1;
           color: white;
+          padding: 20px;
         }
         .profile-container {
+          max-width: 800px;
+          margin: 0 auto;
           background-color: #232329;
           border-radius: 12px;
           padding: 20px;
@@ -466,54 +450,36 @@ function Profile() {
           padding: 0;
         }
         .survey-list__item {
+          margin-bottom: 16px;
+        }
+        .survey-list__item-content {
           background-color: #34353b;
           border-radius: 8px;
-          padding: 15px;
-          margin-bottom: 10px;
-        }
-        .survey-title {
-          margin: 0 0 5px 0;
-        }
-        .survey-description {
-          margin: 0 0 10px 0;
-          color: #aaa;
-        }
-        .btn-statistics {
-          background-color: #6366f1;
-          border: none;
-          color: white;
-          padding: 8px 16px;
-          border-radius: 6px;
+          padding: 16px;
           cursor: pointer;
-          font-weight: 600;
           transition: background-color 0.3s ease;
         }
-        .btn-statistics:disabled {
-          background-color: #999;
-          cursor: not-allowed;
+        .survey-list__item-content:hover {
+          background-color: #3f4047;
         }
-        .btn-statistics:hover:not(:disabled) {
-          background-color: #4f46e5;
+        .survey-title {
+          margin: 0 0 8px 0;
+          color: #fff;
         }
-        .survey-statistics {
-          margin-top: 10px;
-          padding: 10px;
-          border-radius: 8px;
-          background-color: #444;
+        .survey-description {
+          margin: 0 0 12px 0;
+          color: #9ca3af;
         }
-        .demographics {
-          margin-top: 10px;
+        .survey-tags {
+          margin: 8px 0;
+          font-size: 0.9rem;
+          color: #9ca3af;
+          font-style: italic;
         }
-        .demographics > div {
-          margin-bottom: 20px;
-          padding: 15px;
-          border-radius: 8px;
-          background-color: #444;
-        }
-        .demographics strong {
-          display: block;
-          margin-bottom: 5px;
-          color: #ddd;
+        .survey-meta {
+          margin-top: 12px;
+          font-size: 0.9rem;
+          color: #9ca3af;
         }
       `}</style>
         </>

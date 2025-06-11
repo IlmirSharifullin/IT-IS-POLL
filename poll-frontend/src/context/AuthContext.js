@@ -19,8 +19,10 @@ export function AuthProvider({children}) {
                 });
                 if (!res.ok) throw new Error('Не авторизован');
                 const data = await res.json();
+                console.log('User data from server:', data);
                 setUser(data);
-            } catch {
+            } catch (err) {
+                console.error('Error fetching user:', err);
                 setUser(null);
                 setToken(null);
                 localStorage.removeItem('token');
@@ -64,6 +66,7 @@ export function AuthProvider({children}) {
         });
         if (!userRes.ok) throw new Error('Не удалось получить данные пользователя');
         const userData = await userRes.json();
+        console.log('User data after login:', userData);
         setUser(userData);
     };
 
