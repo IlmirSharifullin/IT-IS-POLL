@@ -95,15 +95,44 @@ function formatDate(dateString) {
     return date.toLocaleDateString('ru-RU', options);
 }
 
+function Modal({children, onClose}) {
+    useEffect(() => {
+        function onKeyDown(e) {
+            if (e.key === 'Escape') onClose();
+        }
+
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [onClose]);
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <button className="modal-close" onClick={onClose}>&times;</button>
+                {children}
+            </div>
+        </div>
+    );
+}
+
 function NewsFeed() {
     const {user, token} = useContext(AuthContext);
     const [newsList, setNewsList] = useState([]);
     const [users, setUsers] = useState([]);
+    const [tagsList, setTagsList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [commentTexts, setCommentTexts] = useState({});
     const [submittingComment, setSubmittingComment] = useState({});
     const [likes, setLikes] = useState({});
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [newNewsData, setNewNewsData] = useState({
+        title: '',
+        text: '',
+        image: '',
+        tags: [],
+    });
+    const [creating, setCreating] = useState(false);
 
     useEffect(() => {
         async function fetchUsers() {
@@ -140,8 +169,24 @@ function NewsFeed() {
             }
         }
 
+        async function fetchTags() {
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/v1/tags/', {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (!res.ok) throw new Error('Ошибка загрузки тегов');
+                const data = await res.json();
+                setTagsList(data);
+            } catch {
+                setTagsList([]);
+            }
+        }
+
         fetchUsers();
         fetchNews();
+        fetchTags();
     }, [token]);
 
     useEffect(() => {
@@ -252,6 +297,53 @@ function NewsFeed() {
         return user ? user.username : `Пользователь #${authorId}`;
     };
 
+    const handleNewNewsChange = e => {
+        const {name, value, options} = e.target;
+        if (name === 'tags') {
+            const selectedTags = Array.from(options)
+                .filter(option => option.selected)
+                .map(option => option.value);
+            setNewNewsData(prev => ({...prev, tags: selectedTags}));
+        } else {
+            setNewNewsData(prev => ({...prev, [name]: value}));
+        }
+    };
+
+    const handleCreateNews = async e => {
+        e.preventDefault();
+        if (!token) {
+            alert('Требуется авторизация');
+            return;
+        }
+        if (!newNewsData.title.trim() || !newNewsData.text.trim()) {
+            alert('Заполните заголовок и текст новости');
+            return;
+        }
+        setCreating(true);
+        try {
+            const res = await fetch('http://127.0.0.1:8000/api/v1/news/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(newNewsData),
+            });
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || 'Ошибка при создании новости');
+            }
+            const createdNews = await res.json();
+            setNewsList(prev => [createdNews, ...prev]);
+            setShowCreateModal(false);
+            setNewNewsData({title: '', text: '', image: '', tags: []});
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            setCreating(false);
+        }
+    };
+
     if (loading) return <p>Загрузка новостей...</p>;
     if (error) return <p style={{color: 'red'}}>Ошибка: {error}</p>;
 
@@ -259,14 +351,22 @@ function NewsFeed() {
         <>
             <BackgroundShapes/>
             <main className="news-feed" style={{position: 'relative', zIndex: 1, padding: '20px'}}>
+                <button
+                    className="create-news-btn"
+                    onClick={() => setShowCreateModal(true)}
+                >
+                    Создать новость
+                </button>
+
                 <h1>Новости</h1>
+
 
                 {newsList.length === 0 && <p>Новостей пока нет.</p>}
                 {newsList.map(news => (
                     <article key={news.id} className="news-item" aria-label={`Новость: ${news.title}`}>
                         <h2>{news.title}</h2>
                         <p className="text">{news.text}</p>
-                        {news.image && <img src={news.image} alt={news.title}/>}
+                        {news.image && <img src={news.image} alt={news.title} className="news-image"/>}
                         {news.tags && news.tags.length > 0 && (
                             <div className="news-tags">
                                 {news.tags.map((tag, index) => (
@@ -281,9 +381,10 @@ function NewsFeed() {
                                 aria-pressed={likes[news.id]?.liked || false}
                                 className={`like-btn ${likes[news.id]?.liked ? 'liked' : ''}`}
                             >
-                                {likes[news.id]?.liked ? '❤️ Лайк' : '🤍 Лайк'}
+                                {likes[news.id]?.liked ? '❤️   ' : '🤍   '}
+                                <span style={{color: '#d027b9', fontWeight: 700}}>{likes[news.id]?.count || 0}</span>
                             </button>
-                            <span style={{color: '#6366F1', fontWeight: 700}}>{likes[news.id]?.count || 0} лайков</span>
+
                         </div>
 
                         <section className="comments-section" aria-label="Комментарии">
@@ -303,6 +404,79 @@ function NewsFeed() {
                     </article>
                 ))}
             </main>
+
+            {showCreateModal && (
+                <Modal onClose={() => setShowCreateModal(false)}>
+                    <div className="create-news-modal">
+                        <h2>Создать новость</h2>
+                        <form onSubmit={handleCreateNews}>
+                            <div className="form-group">
+                                <label htmlFor="title">Заголовок:</label>
+                                <input
+                                    type="text"
+                                    id="title"
+                                    name="title"
+                                    value={newNewsData.title}
+                                    onChange={handleNewNewsChange}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="text">Текст:</label>
+                                <textarea
+                                    id="text"
+                                    name="text"
+                                    value={newNewsData.text}
+                                    onChange={handleNewNewsChange}
+                                    required
+                                    rows={5}
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="image">Изображение:</label>
+                                <input
+                                    type="file"
+                                    id="image"
+                                    name="image"
+                                    accept="image/*"
+
+                                />
+
+                            </div>
+
+
+                            <div className="form-group">
+                                <label htmlFor="tags">Теги:</label>
+                                <select
+                                    id="tags"
+                                    name="tags"
+                                    multiple
+                                    value={newNewsData.tags}
+                                    onChange={handleNewNewsChange}
+                                    size={Math.min(tagsList.length, 5)}
+                                >
+                                    {tagsList.map(tag => (
+                                        <option key={tag.id} value={tag.title}>
+                                            {tag.title}
+                                        </option>
+                                    ))}
+                                </select>
+                                <small>Зажмите Ctrl для выбора нескольких тегов</small>
+                            </div>
+
+                            <div className="form-actions">
+                                <button type="button" onClick={() => setShowCreateModal(false)}>Отмена</button>
+                                <button type="submit" disabled={creating} className="submit-btn">
+                                    {creating ? 'Создание...' : 'Создать'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </Modal>
+            )}
+
             <style>{`
         .background-shapes {
           position: fixed;
@@ -321,17 +495,150 @@ function NewsFeed() {
           transform: translate(-50%, -50%);
           transition: background 0.3s;
         }
+        .news-header {
+          text-align: center;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        .create-news-btn {
+          background-color: #6366F1;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 10px 16px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.2s;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .create-news-btn:hover {
+          background-color: #4F46E5;
+        }
+        .news-image {
+          max-width: 300px;
+          height: auto;
+          border-radius: 8px;
+          margin: 10px 0;
+        }
         .news-tags {
           display: flex;
+          flex-wrap: wrap;
           gap: 8px;
-          margin-bottom: 10px;
+          margin: 10px 0;
         }
         .news-tag {
-          background-color: var(--color-accent, #6366F1);
-          color: var(--color-bg, #fff);
-          padding: 4px 8px;
+          background-color: #6366F1;
+          color: white;
+          padding: 4px 10px;
+          border-radius: 16px;
+          font-size: 0.85rem;
+          font-weight: 500;
+        }
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.7);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+        .modal-content {
+          background-color: #232329;
+          border-radius: 12px;
+          padding: 24px;
+          width: 90%;
+          max-width: 500px;
+          max-height: 90vh;
+          overflow-y: auto;
+          position: relative;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .modal-close {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          background: none;
+          border: none;
+          font-size: 24px;
+          color: #9CA3AF;
+          cursor: pointer;
+        }
+        .create-news-modal h2 {
+          margin-top: 0;
+          margin-bottom: 20px;
+          color: white;
+          font-size: 1.5rem;
+        }
+        .form-group {
+          margin-bottom: 16px;
+        }
+        .form-group label {
+          display: block;
+          margin-bottom: 6px;
+          font-weight: 500;
+          color: white;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+          width: 100%;
+          padding: 10px;
           border-radius: 6px;
+          border: 1px solid #4B5563;
+          background-color: #1F2937;
+          color: white;
+          font-size: 1rem;
+        }
+        .form-group small {
+          display: block;
+          margin-top: 4px;
+          color: #9CA3AF;
           font-size: 0.8rem;
+        }
+        .form-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          margin-top: 24px;
+        }
+        .form-actions button {
+          padding: 8px 16px;
+          border-radius: 6px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+        .form-actions button:first-child {
+          background-color: transparent;
+          border: 1px solid #4B5563;
+          color: #E5E7EB;
+        }
+        .submit-btn {
+          background-color: #6366F1;
+          color: white;
+          border: none;
+        }
+        .submit-btn:disabled {
+          background-color: #4B5563;
+          cursor: not-allowed;
+        }
+        .like-btn {
+          background-color: transparent;
+          border: 1px solid #6366F1;
+          color: #6366F1;
+          padding: 6px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .like-btn.liked {
+          background-color: #6366F1;
+          color: white;
         }
       `}</style>
         </>
@@ -407,33 +714,22 @@ function Comments({
     };
 
     if (loadingComments) return <p>Загрузка комментариев...</p>;
-    if (!comments.length) return (
-        <>
-            <p>Комментариев пока нет.</p>
-            <form onSubmit={handleSubmit} className="comment-form">
-        <textarea
-            value={commentTexts[newsId] || ''}
-            onChange={e => onCommentChange(newsId, e.target.value)}
-            rows={3}
-            placeholder="Оставьте комментарий"
-            required
-        />
-                <button type="submit" disabled={submittingComment[newsId]}>
-                    {submittingComment[newsId] ? 'Отправка...' : 'Отправить'}
-                </button>
-            </form>
-        </>
-    );
 
     return (
-        <>
-            <ul className="comments-list" aria-label="Список комментариев">
-                {comments.map(comment => (
-                    <li key={comment.id} aria-label={`Комментарий пользователя ${getAuthorName(comment.author)}`}>
-                        <strong>{getAuthorName(comment.author)}:</strong> {comment.text}
-                    </li>
-                ))}
-            </ul>
+        <div className="comments-container">
+            {comments.length === 0 ? (
+                <p>Комментариев пока нет.</p>
+            ) : (
+                <ul className="comments-list">
+                    {comments.map(comment => (
+                        <li key={comment.id} className="comment-item">
+                            <div className="comment-author">{getAuthorName(comment.author)}</div>
+                            <div className="comment-text">{comment.text}</div>
+                        </li>
+                    ))}
+                </ul>
+            )}
+
             <form onSubmit={handleSubmit} className="comment-form">
         <textarea
             value={commentTexts[newsId] || ''}
@@ -441,12 +737,79 @@ function Comments({
             rows={3}
             placeholder="Оставьте комментарий"
             required
+            className="comment-input"
         />
-                <button type="submit" disabled={submittingComment[newsId]}>
+                <button
+                    type="submit"
+                    disabled={submittingComment[newsId]}
+                    className="comment-submit"
+                >
                     {submittingComment[newsId] ? 'Отправка...' : 'Отправить'}
                 </button>
             </form>
-        </>
+
+            <style jsx>{`
+                .comments-container {
+                    margin-top: 16px;
+                }
+
+                .comments-list {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0 0 16px 0;
+                }
+
+                .comment-item {
+                    padding: 12px;
+                    border-radius: 8px;
+                    background-color: rgba(99, 102, 241, 0.1);
+                    margin-bottom: 8px;
+                }
+
+                .comment-author {
+                    font-weight: 600;
+                    margin-bottom: 4px;
+                    color: #6366F1;
+                }
+
+                .comment-text {
+                    color: #E5E7EB;
+                }
+
+                .comment-form {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .comment-input {
+                    width: 100%;
+                    padding: 10px;
+                    border-radius: 6px;
+                    border: 1px solid #4B5563;
+                    background-color: #1F2937;
+                    color: white;
+                    font-size: 1rem;
+                    resize: vertical;
+                }
+
+                .comment-submit {
+                    align-self: flex-end;
+                    padding: 8px 16px;
+                    background-color: #6366F1;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    font-weight: 500;
+                    cursor: pointer;
+                }
+
+                .comment-submit:disabled {
+                    background-color: #4B5563;
+                    cursor: not-allowed;
+                }
+            `}</style>
+        </div>
     );
 }
 
