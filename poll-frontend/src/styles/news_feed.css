@@ -1,0 +1,226 @@
+html, body {
+    height: auto;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    margin: 0;
+    padding: 0;
+    background: #18181B;
+    font-family: 'Inter', Arial, sans-serif;
+    color: #fff;
+}
+
+.news-feed {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px 40px 20px;
+    background: #232329;
+    border-radius: 24px;
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.45);
+    box-sizing: border-box;
+}
+
+.news-feed h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 32px;
+    color: #ffffff;
+}
+
+.create-news-btn {
+    display: block;
+    margin: 0 auto 32px auto;
+    padding: 14px 28px;
+    background: #6366F1;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.create-news-btn:hover {
+    background: #4f52d1;
+}
+
+.news-item {
+    background: #18181B;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+
+.news-item h2 {
+    font-size: 1.5rem;
+    color: #6366F1;
+    margin-bottom: 12px;
+}
+
+.news-item p.text {
+    font-size: 1rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    margin-bottom: 16px;
+}
+
+.news-item img {
+    max-width: 100%;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    user-select: none;
+}
+
+.like-btn {
+    background-color: transparent;
+    border: 2px solid #6366F1;
+    color: #6366F1;
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+}
+
+.like-btn.liked {
+    background-color: #6366F1;
+    color: #fff;
+    border-color: #6366F1;
+}
+
+.like-btn:hover {
+    background-color: #6366F1;
+    color: #fff;
+}
+
+.comments-section {
+    border-top: 1px solid #393942;
+    padding-top: 16px;
+}
+
+.comments-section h3 {
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #6366F1;
+}
+
+.comments-list {
+    max-height: 180px; /* высота под 3 комментария */
+    overflow-y: auto;
+    list-style: none;
+    padding-left: 0;
+    margin-top: 0;
+    color: #fff;
+    border: 1px solid #393942;
+    border-radius: 12px;
+    background: #232329;
+}
+
+.comments-list li {
+    padding: 8px 12px;
+    border-bottom: 1px solid #393942;
+    font-size: 0.95rem;
+}
+
+.comments-list li:last-child {
+    border-bottom: none;
+}
+
+.comment-form textarea {
+    width: 100%;
+    background: #232329;
+    border: 1px solid #393942;
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: #fff;
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 1rem;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.comment-form textarea::placeholder {
+    color: #8a8a93;
+}
+
+.comment-form textarea:focus {
+    border-color: #6366F1;
+}
+
+.comment-form button {
+    margin-top: 12px;
+    padding: 12px 24px;
+    background: #6366F1;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.comment-form button:hover {
+    background: #4f52d1;
+}
+
+.comment-form button:disabled {
+    background: #393942;
+    cursor: not-allowed;
+}
+
+.login-prompt {
+    font-style: italic;
+    color: #8a8a93;
+    margin-top: 12px;
+    text-align: center;
+}
+
+.create-news-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #18181B;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    margin-bottom: 24px;
+}
+
+.create-news-form input,
+.create-news-form textarea {
+    border-radius: 8px;
+    border: 1px solid #393942;
+    background: #232329;
+    color: #fff;
+    padding: 10px 14px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.create-news-form input:focus,
+.create-news-form textarea:focus {
+    border-color: #6366F1;
+}
+
+.create-news-form button {
+    background: #6366F1;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.create-news-form button:disabled {
+    background: #393942;
+    cursor: not-allowed;
+}
